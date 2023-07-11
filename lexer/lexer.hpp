@@ -33,7 +33,7 @@ class lexer {
 					};
 				};
 			}
-			return PARSING_SUCCESS;
+			return LEXER_SUCCESS;
 		}
 		class token {
 			public:
@@ -43,7 +43,8 @@ class lexer {
 						__is_space = true;
 					else if(__data == ";")
 						__is_semicolon = true;
-					else if(__data.size() == 1 && std::find(operators.begin(), operators.end(), *__data.begin()) != operators.end())
+					else if(__data.size() == 1 && std::find(operators.begin(), 
+						operators.end(), *__data.begin()) != operators.end())
 						__is_operator = true;
 					else if(std::find(keywords.begin(), keywords.end(), __data) != keywords.end())
 						__is_keyword = true;
@@ -92,11 +93,12 @@ class lexer {
 		static constexpr std::array<char, 5> operators = {
 			'+', '-', '/', '*', '%'
 		};
+		using LexVector = std::vector<token>;
 		/* 
 		 * l8ter add bitwise operators
 		 */
-		std::vector<token> lexer_vec{};
-		static constexpr int PARSING_SUCCESS = 0;
+		LexVector lexer_vec{};
+		static constexpr int LEXER_SUCCESS = 0;
 	private:
 		std::string __path{};
 		std::string __contents{};
