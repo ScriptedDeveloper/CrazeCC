@@ -28,11 +28,16 @@ class lexer {
 				case ';' : {
 					lexer_vec.push_back(token(std::string(1, c)));
 				};
+				case '\n' : {
+					continue;
+				}
 				default : {
 					curr_token += c;
 					};
 				};
 			}
+			if(lexer_vec.empty() || lexer_vec.rbegin()->data() != curr_token)
+				lexer_vec.push_back(curr_token);
 			return LEXER_SUCCESS;
 		}
 		class token {
@@ -90,8 +95,8 @@ class lexer {
 		static constexpr std::array<std::string, 3> keywords = {
 			"int", "bool", "char"
 		};	
-		static constexpr std::array<char, 5> operators = {
-			'+', '-', '/', '*', '%'
+		static constexpr std::array<char, 6> operators = {
+			'+', '-', '/', '*', '%', '='
 		};
 		using LexVector = std::vector<token>;
 		/* 
