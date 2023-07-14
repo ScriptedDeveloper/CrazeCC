@@ -23,13 +23,24 @@ class lexer {
 			for(char c : __contents) {
 			switch(c) {
 				case ' ' : {
-					lexer_vec.push_back(token(std::move(curr_token)));
+					if(!curr_token.empty())
+						lexer_vec.push_back(token(std::move(curr_token)));
+					else
+						lexer_vec.push_back(token(std::string(1, c)));
 				};
 				case ';' : {
+					if(!lexer_vec.empty())
+						lexer_vec.push_back(token(std::move(curr_token)));
 					lexer_vec.push_back(token(std::string(1, c)));
 				};
 				case '\n' : {
 					continue;
+				};
+				case '{' : {
+					lexer_vec.push_back(token(std::string(1, c)));
+				};
+				case '}' : {
+					lexer_vec.push_back(token(std::string(1, c)));
 				}
 				default : {
 					curr_token += c;
@@ -53,6 +64,8 @@ class lexer {
 						__is_operator = true;
 					else if(std::find(keywords.begin(), keywords.end(), __data) != keywords.end())
 						__is_keyword = true;
+					else if(std::find(data_types.begin(), data_types.end(), __data) != data_types.end())
+						__is_data_type = true;
 					else
 						__is_value = true;
 				};
@@ -75,13 +88,21 @@ class lexer {
 			inline bool is_value() {
 				return __is_value;
 			}
+			inline bool is_parenthesis() {
+				return __is_parenthesis;
+			}
+			inline bool is_data_type() {
+				return __is_data_type;
+			}
 			private:
 				std::string __data{};
 				bool __is_space{false};
 				bool __is_semicolon{false};
 				bool __is_keyword{false};
+				bool __is_data_type{false};
 				bool __is_operator{false};
 				bool __is_value{false};
+				bool __is_parenthesis{false};
 				bool __check_if_space() {
 					for(char c : __data) {
 						if(c != ' ') {
@@ -92,7 +113,10 @@ class lexer {
 				}
 
 		};
-		static constexpr std::array<std::string, 3> keywords = {
+		static constexpr std::array<std::string, 4> keywords = {
+			"if", "elif", "else", "def"
+		};	
+		static constexpr std::array<std::string, 4> data_types = {
 			"int", "bool", "char"
 		};	
 		static constexpr std::array<char, 6> operators = {
