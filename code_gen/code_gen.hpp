@@ -34,14 +34,14 @@ class code_generator {
 	private:
 		std::vector<AST::AnyAST> ast_vec{};
 		std::string_view file_name{};
-		std::string asm_content{};
+		std::string asm_content{"BITS 64\n"};
 		int rbp_count{}; // for the stack
 
 		int generate_variable(AST::variable &var) {
 			auto type = var.get_type();
 			auto unconverted_value = var.get_value();
 			std::string val{};
-			if(unconverted_value.size() == 1)
+			if(var.get_type() != "bool")
 				val = std::move(*unconverted_value.begin());
 			else {
 				if(unconverted_value == "true")
@@ -54,10 +54,10 @@ class code_generator {
 			std::string asm_type{};
 			int stack_to_reserve{}; // amount of bytes we have to reserve for the variable
 			if(type == "int") {
-				asm_type = "BYTE PTR";
+				asm_type = "dword";
 				stack_to_reserve = 4;
 			} else if(type == "char" || type == "bool") {
-				asm_type = "BYTE PTR";
+				asm_type = "byte";
 				stack_to_reserve = 1;
 			} else {
 				return GENERATE_UNKNOWN_VARIABLE;
@@ -65,8 +65,9 @@ class code_generator {
 			/*
 			 * generates asm using simple string  manipulation (totally not copied from gcc)
 			 */
-			asm_type += std::string("[") + "rbp - " + std::to_string(rbp_count + stack_to_reserve) + "], " + val;
-			asm_content += var.instruction_type + std::move(asm_type);
+			asm_type += std::string("[") + "rbp - " + std::to_string(rbp_count + stack_to_reserve) + "], " + val + "\n";
+			asm_content += var.instruction + " " + std::move(asm_type);
+			rbp_count += stack_to_reserve;
 			/*
 			 * adding it to the asm_content now!
 			 */

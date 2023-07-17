@@ -28,8 +28,10 @@ class syntax_validator {
 					auto variable_ret = check_variable(token, is_variable, potential_last_error, complete);
 					if(variable_ret.first != SYNTAX_SUCCESS)
 						return variable_ret;
-					if(!is_variable) // token is a semicolon, variable declaration has ended
+					if(!is_variable) { // token is a semicolon, variable declaration has ended
 						ast_vector.push_back(last_expression->first);
+						clear_expression();
+					}
 				} else if(is_if || (token.is_keyword() && token.data() == *lexer::keywords.begin())) {
 					auto if_ret = check_if_statement(token, is_if, potential_last_error, complete);
 					if(if_ret.first != SYNTAX_SUCCESS)
@@ -101,7 +103,7 @@ class syntax_validator {
 		lexer::LexVector __lex_vec{};
 		int line{1};
 	
-		std::unique_ptr<expression_variant> last_expression = std::make_unique<expression_variant>();
+		 std::unique_ptr<expression_variant> last_expression = std::make_unique<expression_variant>();
 
 		std::pair<int, int> assign_variable(lexer::token &token, auto &last_expression, bool &is_variable, 
 				int line, int &potential_last_error, bool &complete) {
@@ -235,6 +237,9 @@ class syntax_validator {
 			
 		}
 
+		inline void clear_expression() {
+			last_expression = std::make_unique<expression_variant>();
+		}
 		std::unordered_map<std::string_view, std::shared_ptr<AST::AnyAST>> var_map{};
 
 
