@@ -18,23 +18,32 @@ class syntax_validator {
 			 * the bool in the pair tells us whether the expression is existing or not.
 			 */
 			bool is_variable{false}, complete{false};
+			bool is_function{};
 			bool is_if{false};
 			int potential_last_error{SYNTAX_SUCCESS}; // in case we go to the next expression, we can look back in case something's missing
 			for(auto token : __lex_vec) {
 				if(complete && potential_last_error != SYNTAX_SUCCESS)
 					return {potential_last_error, line}; // something went wrong in the past line
-				if(is_variable || token.is_data_type()) {
+				if(is_variable || (token.is_data_type() && !last_expression->second)) {
 					auto variable_ret = check_variable(token, is_variable, potential_last_error, complete);
 					if(variable_ret.first != SYNTAX_SUCCESS)
 						return variable_ret;
-					if(token.is_semicolon())
+					if(!is_variable) // token is a semicolon, variable declaration has ended
 						ast_vector.push_back(last_expression->first);
-				} else if(is_if || (token.is_keyword() && token.data() == "if")) {
+				} else if(is_if || (token.is_keyword() && token.data() == *lexer::keywords.begin())) {
 					auto if_ret = check_if_statement(token, is_if, potential_last_error, complete);
 					if(if_ret.first != SYNTAX_SUCCESS)
 						return if_ret;
 				} else if(token.is_semicolon())
 					line++;
+				else if(is_function || token.is_keyword() && token.data() == *lexer::keywords.rbegin()) {
+					auto func_ret = check_function(token, is_function, potential_last_error, complete);
+					if(func_ret.first != SYNTAX_SUCCESS)
+						return func_ret;
+					if(!is_function)
+						ast_vector.push_back(last_expression->first);
+
+				}
 			}
 			if(!complete)
 				return {potential_last_error, line};
@@ -77,6 +86,14 @@ class syntax_validator {
 		static constexpr int ERROR_EXPECTED_EXPRESSION = -5;
 		static constexpr int ERROR_EXPECTED_SEMICOLON = -6;
 		static constexpr int ERROR_EXPECTED_EQUAL_SYMBOL = -7;
+		static constexpr int ERROR_EXPECTED_FUNCTION_DECLARATION = -10;
+		static constexpr int ERROR_EXPECTED_FUNCTION_TYPE = -11;
+		static constexpr int ERROR_EXPECTED_FUNCTION_NAME = -12;
+		static constexpr int ERROR_EXPECTED_PARAM_TYPE = -13;
+		static constexpr int ERROR_EXPECTED_PARAM_VALUE = -14;
+		static constexpr int ERROR_EXPECTED_PARENTHESIS = -15;
+		static constexpr int ERROR_UNEXPECTED_PARENTHESIS = -16;
+		static constexpr int SYNTAX_FUNCTION_FINISHED = -17;
 
 		using expression_variant = std::pair<AST::AnyAST, bool>;
 		std::vector<AST::AnyAST> ast_vector{};
@@ -112,7 +129,6 @@ class syntax_validator {
 				else {
 					var_obj.define_name(token.data()); // we gonna assume its the variable name
 					potential_last_error = ERROR_EXPECTED_EQUAL_SYMBOL;
-					var_obj.define_name(token.data());
 				}
 			}
 			else
@@ -147,12 +163,79 @@ class syntax_validator {
 		}
 
 		std::pair<int, int> check_if_statement(lexer::token &token, 
-				 bool &is_variable, int &potential_last_error, bool &complete) {
+				 bool &is_if, int &potential_last_error, bool &complete) {
 
+			
+		}	
+		std::pair<int, int> check_function(lexer::token &token, 
+				 bool &is_function, int &potential_last_error, bool &complete) {	
+			if(token.is_space())
+				return {SYNTAX_SUCCESS, -1}; // ignoring spaces
+			/*
+			 * Error checking
+			 */
+			if(!last_expression->second && !token.is_keyword())
+				return {ERROR_EXPECTED_FUNCTION_DECLARATION, line};
+			if(!std::holds_alternative<AST::function>(last_expression->first))
+				last_expression->first = AST::function();
+			auto my_func = std::get<AST::function>(last_expression->first);
+			if(!my_func.defined_type() && token.is_brackets())
+				return {ERROR_EXPECTED_FUNCTION_TYPE, line};
+			if(!my_func.defined_name() && token.is_curly_brackets()) 
+				return {ERROR_EXPECTED_FUNCTION_NAME, line};
+			if(my_func.get_parenthesis_count() < 2 && token.is_curly_brackets())
+				return {ERROR_EXPECTED_PARENTHESIS, line};
+
+			is_function = true;
+			complete = false;
+			last_expression->second = true;
+			if(token.is_keyword())
+				my_func.define_keyword();
+			else if(token.is_data_type()) {
+				if(my_func.defined_type()) {
+					auto param_vec = my_func.params;
+					if(param_vec.empty() || !param_vec.rbegin()->first.empty())
+						return {ERROR_EXPECTED_PARAM_VALUE, line};
+					/*
+					 * Okay, now we have to define the param type.
+					 */
+					param_vec.rbegin()->first = token.data();
+				} else 
+					my_func.define_type(token.data());
+				
+			}
+			else if(token.is_value()) {
+				if(my_func.defined_name()) {
+					auto param_vec = my_func.params;
+					if(param_vec.empty() || !param_vec.rbegin()->first.empty())
+						return {ERROR_EXPECTED_PARAM_TYPE, line};
+					/*
+					 * Now we have to define the param name of last param
+					 */
+					param_vec.rbegin()->second = token.data();
+				} else {
+					my_func.define_name(token.data());
+				}
+			} else if(token.is_brackets()) {
+				if(my_func.get_parenthesis_count() >= 2)
+					return {ERROR_UNEXPECTED_PARENTHESIS, line};
+				my_func.__parenthesis_count++;
+			} else if(token.is_curly_brackets()) {
+				if(my_func.get_curly_parenthesis_count() >= 2)
+					return {ERROR_UNEXPECTED_PARENTHESIS, line};
+				my_func.__curly_parenthesis_count++;
+				if(my_func.get_curly_parenthesis_count() == 2) {
+					is_function = false;
+					complete = true;
+				}
+
+			}
+			last_expression->first = my_func;
+			return {SYNTAX_SUCCESS, -1};
 			
 		}
 
-		std::unordered_map<std::string_view, std::shared_ptr<std::variant<AST::variable>>> var_map{};
+		std::unordered_map<std::string_view, std::shared_ptr<AST::AnyAST>> var_map{};
 
 
 };

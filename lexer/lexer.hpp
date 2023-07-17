@@ -6,8 +6,7 @@
 #include <array>
 #include <algorithm>
 
-/*
- * I tried using modules, sadly I encountered a couple clang bugs while linking with stdlib
+/* I tried using modules, sadly I encountered a couple clang bugs while linking with stdlib
  */
 
 class lexer {
@@ -27,25 +26,38 @@ class lexer {
 						lexer_vec.push_back(token(std::move(curr_token)));
 					else
 						lexer_vec.push_back(token(std::string(1, c)));
+					break;
 				};
 				case ';' : {
 					if(!lexer_vec.empty())
 						lexer_vec.push_back(token(std::move(curr_token)));
 					lexer_vec.push_back(token(std::string(1, c)));
+					break;
 				};
 				case '\n' : {
 					continue;
 				};
 				case '{' : {
 					lexer_vec.push_back(token(std::string(1, c)));
+					break;
 				};
 				case '}' : {
 					lexer_vec.push_back(token(std::string(1, c)));
+					break;
 				}
+				case '(' : {
+					lexer_vec.push_back(token(std::string(1, c)));
+					break;
+				};	
+				case ')' : {
+					lexer_vec.push_back(token(std::string(1, c)));
+					break;
+				};
 				default : {
 					curr_token += c;
-					};
+					break;
 				};
+			};
 			}
 			if(lexer_vec.empty() || lexer_vec.rbegin()->data() != curr_token)
 				lexer_vec.push_back(curr_token);
@@ -66,8 +78,10 @@ class lexer {
 						__is_keyword = true;
 					else if(std::find(data_types.begin(), data_types.end(), __data) != data_types.end())
 						__is_data_type = true;
-					else
-						__is_value = true;
+					else {
+						if(std::find(brackets.begin(), brackets.end(), __data[0]) == brackets.end())
+							__is_value = true;
+					}
 				};
 
 			inline std::string data() {
@@ -79,8 +93,7 @@ class lexer {
 			inline bool is_semicolon() {
 				return __is_semicolon;
 			}
-			inline bool is_keyword() {
-				return __is_keyword;
+			inline bool is_keyword() { return __is_keyword;
 			}
 			inline bool is_operator() {
 				return __is_operator;
@@ -93,6 +106,12 @@ class lexer {
 			}
 			inline bool is_data_type() {
 				return __is_data_type;
+			}
+			inline bool is_brackets() {
+				return __data == "(" || __data == ")";
+			}
+			inline bool is_curly_brackets() {
+				return __data == "{" || __data == "}";
 			}
 			private:
 				std::string __data{};
@@ -111,13 +130,14 @@ class lexer {
 					}
 					return true;
 				}
+				static constexpr std::array<char, 5> brackets = {'(', ')', '{', '}'};
 
 		};
 		static constexpr std::array<std::string, 4> keywords = {
 			"if", "elif", "else", "def"
-		};	
+		};
 		static constexpr std::array<std::string, 4> data_types = {
-			"int", "bool", "char"
+			"int", "bool", "char", "void"
 		};	
 		static constexpr std::array<char, 6> operators = {
 			'+', '-', '/', '*', '%', '='

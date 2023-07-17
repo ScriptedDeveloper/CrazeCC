@@ -1,7 +1,9 @@
 #pragma once	
+#include <cstdint>
 #include <string>
 #include <string_view>
 #include <variant>
+#include <vector>
 
 namespace AST {
 	class variable {
@@ -70,7 +72,51 @@ namespace AST {
 			bool __defined_expression{false};
 			bool __defined_code_block{false};
 		};
+	class function {
+		public:
+			function() {};
+			inline bool defined_keyword() {
+				return __defined_keyword;
+			}
+			inline bool defined_type() {
+				return !__type.empty();
+			}
+			inline void define_type(std::string_view type_param) {
+				__type = type_param;
+			}
+			inline void define_name(std::string_view name_param) {
+				__name = name_param;
+			}
+			inline void define_keyword() {
+				__defined_keyword = true;
+			}
+			inline std::string_view get_type() {
+				return __type;
+			}
+			inline bool defined_params() {
+				return __defined_params;
+			}
+			inline bool defined_name() {
+				return !__name.empty();
+			}
+			inline std::string_view get_name() {
+				return __name;
+			}
+			inline uint8_t get_curly_parenthesis_count() {
+				return __curly_parenthesis_count;
+			}
+			inline uint8_t get_parenthesis_count() {
+				return __parenthesis_count;
+			}
+		std::vector<std::pair<std::string, std::string>> params{}; //first pair member is type, second is name
+		uint8_t __parenthesis_count{};
+		uint8_t __curly_parenthesis_count{};
+		private:
+			bool __defined_keyword{false};
+			bool __defined_params{false};
+			std::string __name{}, __type{};
+	};
 
-	using AnyAST = std::variant<variable, if_statement>;
+	using AnyAST = std::variant<variable, if_statement, function>;
 
 };
