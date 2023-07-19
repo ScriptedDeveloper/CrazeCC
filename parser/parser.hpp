@@ -3,7 +3,7 @@
 
 class parser {
 	public:
-		parser(lexer::LexVector vec) {
+		parser(std::shared_ptr<lexer::LexVector> vec) {
 			syntax_validator s(vec);
 			auto ret_syntax = s.check_syntax_tokens();
 			if(ret_syntax.first != syntax_validator::SYNTAX_SUCCESS) {
@@ -19,7 +19,7 @@ class parser {
 		};
 		std::vector<AST::AnyAST> ast_vec{};
 	protected:	
-		lexer::LexVector __lex_vec{};
+		std::shared_ptr<lexer::LexVector> __lex_vec{};
 
 };
 

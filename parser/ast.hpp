@@ -6,6 +6,10 @@
 #include <vector>
 
 namespace AST {
+	class variable;
+	class if_statement;
+	class function;
+	using AnyAST = std::variant<variable, if_statement, function>;
 	class variable {
 		public:
 			variable() {};
@@ -111,12 +115,12 @@ namespace AST {
 		std::vector<std::pair<std::string, std::string>> params{}; //first pair member is type, second is name
 		uint8_t __parenthesis_count{};
 		uint8_t __curly_parenthesis_count{};
+		std::vector<AnyAST> function_body{};
 		private:
 			bool __defined_keyword{false};
 			bool __defined_params{false};
 			std::string __name{}, __type{};
 	};
 
-	using AnyAST = std::variant<variable, if_statement, function>;
 
 };

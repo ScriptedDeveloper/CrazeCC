@@ -3,6 +3,7 @@
 #include <sstream>
 #include <fstream>
 #include <vector>
+#include <memory>
 #include <array>
 #include <algorithm>
 
@@ -23,34 +24,34 @@ class lexer {
 			switch(c) {
 				case ' ' : {
 					if(!curr_token.empty())
-						lexer_vec.push_back(token(std::move(curr_token)));
+						lexer_vec->push_back(token(std::move(curr_token)));
 					else
-						lexer_vec.push_back(token(std::string(1, c)));
+						lexer_vec->push_back(token(std::string(1, c)));
 					break;
 				};
 				case ';' : {
-					if(!lexer_vec.empty())
-						lexer_vec.push_back(token(std::move(curr_token)));
-					lexer_vec.push_back(token(std::string(1, c)));
+					if(!lexer_vec->empty())
+						lexer_vec->push_back(token(std::move(curr_token)));
+					lexer_vec->push_back(token(std::string(1, c)));
 					break;
 				};
 				case '\n' : {
 					continue;
 				};
 				case '{' : {
-					lexer_vec.push_back(token(std::string(1, c)));
+					lexer_vec->push_back(token(std::string(1, c)));
 					break;
 				};
 				case '}' : {
-					lexer_vec.push_back(token(std::string(1, c)));
+					lexer_vec->push_back(token(std::string(1, c)));
 					break;
 				}
 				case '(' : {
-					lexer_vec.push_back(token(std::string(1, c)));
+					lexer_vec->push_back(token(std::string(1, c)));
 					break;
 				};	
 				case ')' : {
-					lexer_vec.push_back(token(std::string(1, c)));
+					lexer_vec->push_back(token(std::string(1, c)));
 					break;
 				};
 				default : {
@@ -59,8 +60,8 @@ class lexer {
 				};
 			};
 			}
-			if(lexer_vec.empty() || lexer_vec.rbegin()->data() != curr_token)
-				lexer_vec.push_back(curr_token);
+			if(lexer_vec->empty() || lexer_vec->rbegin()->data() != curr_token)
+				lexer_vec->push_back(curr_token);
 			return LEXER_SUCCESS;
 		}
 		class token {
@@ -146,7 +147,7 @@ class lexer {
 		/* 
 		 * l8ter add bitwise operators
 		 */
-		LexVector lexer_vec{};
+		std::shared_ptr<LexVector> lexer_vec{std::make_shared<LexVector>()};
 		static constexpr int LEXER_SUCCESS = 0;
 	private:
 		std::string __path{};
