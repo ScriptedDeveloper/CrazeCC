@@ -62,3 +62,79 @@ std::pair<int, int> generate_ast::variable::assign_variable(lexer::token &token,
 	return {SYNTAX_SUCCESS, -1};
 }
 
+
+std::pair<int, int> generate_ast::function::check_function(lexer::token &token, 
+bool &is_function, bool &complete) {	
+	if(token.is_space())
+		return {SYNTAX_SUCCESS, -1}; // ignoring spaces
+	/*
+	 * Error checking
+	 */
+	if(!last_expression->second && !token.is_keyword())
+		return {ERROR_EXPECTED_FUNCTION_DECLARATION, line};
+	if(!std::holds_alternative<AST::function>(last_expression->first))
+		last_expression->first = AST::function();
+	auto my_func = std::get<AST::function>(last_expression->first);
+	if(!my_func.defined_type() && token.is_brackets())
+		return {ERROR_EXPECTED_FUNCTION_TYPE, line};
+	if(!my_func.defined_name() && token.is_curly_brackets()) 
+		return {ERROR_EXPECTED_FUNCTION_NAME, line};
+	if(my_func.get_parenthesis_count() < 2 && token.is_curly_brackets())
+		return {ERROR_EXPECTED_PARENTHESIS, line};
+
+	return assign_function(token, is_function, complete);
+}
+
+
+std::pair<int, int> generate_ast::function::assign_function(lexer::token &token, 
+bool &is_function, bool &complete) {	
+	auto my_func = std::get<AST::function>(last_expression->first);
+
+	is_function = true;
+	complete = false;
+	last_expression->second = true;
+	if(token.is_keyword())
+		my_func.define_keyword();
+	else if(token.is_data_type()) {
+		if(my_func.defined_type()) {
+			auto param_vec = my_func.params;
+			if(param_vec.empty() || !param_vec.rbegin()->first.empty())
+				return {ERROR_EXPECTED_PARAM_VALUE, line};
+			/*
+			 * Okay, now we have to define the param type.
+			 */
+			param_vec.rbegin()->first = token.data();
+		} else 
+			my_func.define_type(token.data());
+		
+	}
+	else if(token.is_value()) {
+		if(my_func.defined_name()) {
+			auto param_vec = my_func.params;
+			if(param_vec.empty() || !param_vec.rbegin()->first.empty())
+				return {ERROR_EXPECTED_PARAM_TYPE, line};
+			/*
+			 * Now we have to define the param name of last param
+			 */
+			param_vec.rbegin()->second = token.data();
+		} else {
+			my_func.define_name(token.data());
+		}
+	} else if(token.is_brackets()) {
+		if(my_func.get_parenthesis_count() >= 2)
+			return {ERROR_UNEXPECTED_PARENTHESIS, line};
+		my_func.__parenthesis_count++;
+	} else if(token.is_curly_brackets()) {
+		if(my_func.get_curly_parenthesis_count() >= 2)
+			return {ERROR_UNEXPECTED_PARENTHESIS, line};
+		my_func.__curly_parenthesis_count++;
+		if(my_func.get_curly_parenthesis_count() == 2) {
+			is_function = false;
+			complete = true;
+		}
+
+	}
+	last_expression->first = my_func;
+	return {SYNTAX_SUCCESS, -1};
+	
+}

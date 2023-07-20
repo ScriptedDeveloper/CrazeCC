@@ -1,4 +1,5 @@
 #pragma once
+#include "ast.hpp"
 class syntax_validator;
 #include "syntax_validator.hpp"
 
@@ -17,11 +18,17 @@ namespace generate_ast {
 				int line, int &potential_last_error, bool &complete);
 	
 	};
-	class function : public variable {
+	class function : public syntax_validator {
 		public:
-			std::pair<int, int> check_function(lexer::token &token, 
-			 bool &is_function, int &potential_last_error, bool &complete);
+			function(std::shared_ptr<lexer::LexVector> &lex) : syntax_validator(lex) {
 
+			};
+			std::pair<int, int> check_function(lexer::token &token, 
+			 bool &is_function, bool &complete);
+		private:
+			std::vector<AST::AnyAST> function_body{};	
+			std::pair<int, int> assign_function(lexer::token &token, 
+			 bool &is_function, bool &complete);
 
 	};
 };

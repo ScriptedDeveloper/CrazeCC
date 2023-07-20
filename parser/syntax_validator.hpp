@@ -49,14 +49,13 @@ class syntax_validator {
 		static std::unordered_map<std::string_view, std::shared_ptr<AST::AnyAST>> var_map;
 
 	private:
+		/*
 		std::pair<int, int> check_if_statement(lexer::token &token, 
 				 bool &is_if, int &potential_last_error, bool &complete) {
 
 			return {SYNTAX_SUCCESS, -1};
 		}	
-		std::pair<int, int> check_function(lexer::token &token, 
-				 bool &is_function, int &potential_last_error, bool &complete);
-
+		*/
 		inline void clear_expression();
 
 

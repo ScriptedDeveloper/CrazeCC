@@ -16,8 +16,10 @@ class code_generator {
 					auto var = std::get<AST::variable>(curr_tree);
 					generate_variable(var);
 				} else if(std::holds_alternative<AST::if_statement>(curr_tree)) {
+					/*
 					auto statement = std::get<AST::if_statement>(curr_tree);
 					generate_if_statement(statement);
+					*/
 				}
 			}
 			/*
@@ -73,8 +75,9 @@ class code_generator {
 			 */
 			return GENERATE_SUCCESS;
 		}
-		
+		/*
 		int generate_if_statement(AST::if_statement &statement) {
 			return GENERATE_SUCCESS;
 		}
+		*/
 };
