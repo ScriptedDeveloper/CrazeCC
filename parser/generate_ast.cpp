@@ -1,19 +1,27 @@
 #include "generate_ast.hpp"
+#include "ast.hpp"
 
-std::pair<int, int> generate_ast::variable::check_variable(lexer::token &token, 
+//std::unordered_map<std::string_view, std::vector<std::vector<AST::AnyAST>::iterator>> function::param_map{};
+
+			
+std::unordered_map<std::string, std::shared_ptr<AST::AnyAST>> generate_ast::variable::var_map{};
+
+std::unordered_map<std::string, std::shared_ptr<AST::AnyAST>> generate_ast::function::function_map{};
+
+ExpressionRet generate_ast::variable::check(lexer::token &token, 
 	 bool &is_variable, int &potential_last_error, bool &complete) {
 
 	is_variable = true;
 	complete = false;
 	if(token.is_space())
 		return {SYNTAX_SUCCESS, -1}; // ignoring spaces
-	if(!std::holds_alternative<AST::variable>(last_expression->first) && !token.is_keyword())
+	if(!std::holds_alternative<AST::variable>(*last_expression->first) && !token.is_keyword())
 		return {ERROR_EXPECTED_TYPE, line}; // compiler error...
 	if(!last_expression->second && !token.is_data_type())
 		return {ERROR_EXPECTED_TYPE, line};
 	if(!last_expression)
-		last_expression->first = AST::variable();
-	auto var_obj = std::get<AST::variable>(last_expression->first);
+		last_expression->first = std::make_shared<AST::AnyAST>(AST::variable());
+	auto var_obj = std::get<AST::variable>(*last_expression->first);
 	if(token.is_value() && var_obj.defined_value())
 		return {ERROR_EXPECTED_SEMICOLON, line};
 	if(token.is_semicolon() && !var_obj.defined_value())
@@ -24,14 +32,13 @@ std::pair<int, int> generate_ast::variable::check_variable(lexer::token &token,
 	 * Error checking done.. basic
 	 * Now lets assign them values
 	 */
-	return (assign_variable(token, last_expression, is_variable, line, potential_last_error, complete));
+	return (assign(token, last_expression, is_variable, line, potential_last_error, complete));
 }
 
-std::pair<int, int> generate_ast::variable::assign_variable(lexer::token &token, auto &last_expression, bool &is_variable, 
+ExpressionRet generate_ast::variable::assign(lexer::token &token, auto &last_expression, bool &is_variable, 
 	int line, int &potential_last_error, bool &complete) {
 
-	last_expression->second = true; // it exists!
-	auto var_obj = std::get<AST::variable>(last_expression->first);
+	auto var_obj = std::get<AST::variable>(*last_expression->first);
 	if(token.is_data_type()) {
 		var_obj.define_type(token.data());
 		potential_last_error = ERROR_UNKNOWN_VARIABLE;
@@ -43,7 +50,10 @@ std::pair<int, int> generate_ast::variable::assign_variable(lexer::token &token,
 	else if(token.is_semicolon()) {
 		var_obj.define_equal_symbol();
 		is_variable = false;
-		complete = true;
+		complete = true;	
+		ast_vector.push_back(last_expression->first);
+		var_map[var_obj.get_name().data()] = *ast_vector.rbegin();
+		clear_expression();
 		potential_last_error = SYNTAX_SUCCESS;
 	}
 	else if(token.is_value()) {
@@ -58,12 +68,20 @@ std::pair<int, int> generate_ast::variable::assign_variable(lexer::token &token,
 	}
 	else
 		return {ERROR_EXPECTED_VALUE, line};
-	last_expression->first = var_obj;
+	if(last_expression->first != nullptr)
+		*last_expression->first = var_obj;
 	return {SYNTAX_SUCCESS, -1};
 }
 
+void assign_variable_param() {
+	/*
+	 * Assigns the variable to its function param, if it is one
+	 */
 
-std::pair<int, int> generate_ast::function::check_function(lexer::token &token, 
+}
+
+
+ExpressionRet generate_ast::function::check(lexer::token &token, 
 bool &is_function, bool &complete) {	
 	if(token.is_space())
 		return {SYNTAX_SUCCESS, -1}; // ignoring spaces
@@ -72,9 +90,9 @@ bool &is_function, bool &complete) {
 	 */
 	if(!last_expression->second && !token.is_keyword())
 		return {ERROR_EXPECTED_FUNCTION_DECLARATION, line};
-	if(!std::holds_alternative<AST::function>(last_expression->first))
-		last_expression->first = AST::function();
-	auto my_func = std::get<AST::function>(last_expression->first);
+	if(!std::holds_alternative<AST::function>(*last_expression->first))
+		*last_expression->first = AST::function();
+	auto my_func = std::get<AST::function>(*last_expression->first);
 	if(!my_func.defined_type() && token.is_brackets())
 		return {ERROR_EXPECTED_FUNCTION_TYPE, line};
 	if(!my_func.defined_name() && token.is_curly_brackets()) 
@@ -82,59 +100,124 @@ bool &is_function, bool &complete) {
 	if(my_func.get_parenthesis_count() < 2 && token.is_curly_brackets())
 		return {ERROR_EXPECTED_PARENTHESIS, line};
 
-	return assign_function(token, is_function, complete);
+	return assign(token, is_function, complete);
 }
 
 
-std::pair<int, int> generate_ast::function::assign_function(lexer::token &token, 
+ExpressionRet generate_ast::function::assign(lexer::token &token, 
 bool &is_function, bool &complete) {	
-	auto my_func = std::get<AST::function>(last_expression->first);
+	auto my_func = std::get<AST::function>(*last_expression->first);
 
-	is_function = true;
-	complete = false;
-	last_expression->second = true;
 	if(token.is_keyword())
 		my_func.define_keyword();
 	else if(token.is_data_type()) {
 		if(my_func.defined_type()) {
-			auto param_vec = my_func.params;
-			if(param_vec.empty() || !param_vec.rbegin()->first.empty())
-				return {ERROR_EXPECTED_PARAM_VALUE, line};
+			auto param_vec = &my_func.params;
 			/*
 			 * Okay, now we have to define the param type.
 			 */
-			param_vec.rbegin()->first = token.data();
+			param_vec->push_back({token.data(), ""});
 		} else 
 			my_func.define_type(token.data());
 		
 	}
 	else if(token.is_value()) {
 		if(my_func.defined_name()) {
-			auto param_vec = my_func.params;
-			if(param_vec.empty() || !param_vec.rbegin()->first.empty())
-				return {ERROR_EXPECTED_PARAM_TYPE, line};
+			auto param_vec = &my_func.params;	
+			if(param_vec->empty() || param_vec->rbegin()->first.empty())
+				return {ERROR_EXPECTED_PARAM_VALUE, line};
 			/*
 			 * Now we have to define the param name of last param
 			 */
-			param_vec.rbegin()->second = token.data();
+			param_vec->rbegin()->second = token.data();
+			/*
+			 * Once the function is complete, we can assign it. Right now our object is incomplete
+			 */
 		} else {
 			my_func.define_name(token.data());
 		}
 	} else if(token.is_brackets()) {
 		if(my_func.get_parenthesis_count() >= 2)
 			return {ERROR_UNEXPECTED_PARENTHESIS, line};
-		my_func.__parenthesis_count++;
+		my_func.increment_parenthesis_count();
+		if(my_func.get_parenthesis_count() == 2)
+			my_func.define_params();
 	} else if(token.is_curly_brackets()) {
-		if(my_func.get_curly_parenthesis_count() >= 2)
+		if(my_func.get_curly_parenthesis_count() == 2)
 			return {ERROR_UNEXPECTED_PARENTHESIS, line};
-		my_func.__curly_parenthesis_count++;
-		if(my_func.get_curly_parenthesis_count() == 2) {
-			is_function = false;
-			complete = true;
-		}
+		my_func.increment_curly_parenthesis_count();
+		parenthesis_st.push(last_expression->first);
+		ast_vector.push_back(last_expression->first);
+/*
+		for(auto &i : param_map) {
+			auto it = std::find(i.second.begin(), i.second.end(), ast_vector.end());
+			if(it != i.second.end()) {
+				*it = ast_vector.begin();
+			}
+		}	
+		*/
+			
+		is_function = false;
+		complete = true;
+		function_map[my_func.get_name().data()] = *ast_vector.rbegin();
 
 	}
-	last_expression->first = my_func;
+	if(last_expression->first != nullptr)
+		*last_expression->first = my_func;
 	return {SYNTAX_SUCCESS, -1};
 	
+}
+
+
+ExpressionRet generate_ast::function_call::check(lexer::token &token, bool &is_function_call, int &line, std::shared_ptr<AST::AnyAST> &last_expr) {
+	if(!std::holds_alternative<AST::function_call>(*last_expr))
+		*last_expr = AST::function_call();
+	
+	auto func_call = std::get<AST::function_call>(*last_expr);	
+
+	if(!func_call.defined_function_name() && function::function_map.find(token.data()) == function::function_map.end())
+		return {syntax_validator::ERROR_UNKNOWN_FUNCTION_CALL, line};
+
+
+	if(func_call.defined_params() && token.is_data_type())
+		return {syntax_validator::ERROR_UNKNOWN_VARIABLE, line};
+
+	if(token.is_data_type() && func_call.defined_function_name() && variable::var_map.find(token.data()) == variable::var_map.end())
+		return {syntax_validator::ERROR_UNKNOWN_VARIABLE, line};
+
+	if(token.is_data_type() && func_call.defined_params())
+		return {syntax_validator::ERROR_UNKNOWN_VARIABLE, line};
+
+	if(token.is_semicolon() && !func_call.defined_params())
+		return {syntax_validator::ERROR_UNEXPECTED_SEMICOLON, line};
+
+	if(token.is_curly_brackets())
+		return {syntax_validator::ERROR_UNEXPECTED_PARENTHESIS, line};
+
+	if(token.is_keyword())
+		return {syntax_validator::ERROR_UNEXPECTED_KEYWORD, line};
+	
+	auto ret = assign(func_call, is_function_call, token);
+	if(last_expr != nullptr)
+		*last_expr = func_call;
+	return ret;
+}
+			
+
+ExpressionRet generate_ast::function_call::assign(AST::function_call &last_expr, bool &is_function_call, lexer::token &t) {
+	if(t.is_value()) {
+		if(!last_expr.defined_function_name()) {
+			last_expr.define_function_name(function::function_map.find(t.data())->second);
+		} else {
+			/*
+			 * We're gonna assume its a parameter
+			 */
+			last_expr.push_params(std::get<AST::variable>(*generate_ast::variable::var_map[t.data()]));
+		}
+	} else if(t.is_semicolon()) {
+		is_function_call = false;
+		complete = true;
+	}
+
+	return {SYNTAX_SUCCESS, -1};
 }

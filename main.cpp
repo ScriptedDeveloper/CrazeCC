@@ -3,15 +3,25 @@
 #include "code_gen/code_gen.hpp"
 
 int main(int argc, char **argv) {
-	if(argc == 1) {
-		std::cerr << "No source files specified." << std::endl << "./" << argv[0] << " <source_file>" << std::endl;
-		std::exit(1);
+	std::string file_name{}, output{};
+	if(argc != 1) {
+		if(argc == 1) {
+			std::cerr << "No source files specified." << std::endl << "./" << argv[0] << " <source_file>" << std::endl;
+			std::exit(1);
+		} else if(argc <= 3 && std::string_view(argv[1]) != "-d") {
+			std::cerr << "Expected output file! Specifiy with -o" << std::endl;
+			std::exit(1);
+		}	
+		file_name = argv[1];
+		output = argv[3];
+	} else {
+		file_name = "asd";
+		output = "erd";
 	}
-	auto file_name = argv[1];
 	lexer l(file_name);
 	l.parse();
 	parser p(std::move(l.lexer_vec));
-	code_generator c(p.ast_vec, file_name);
+	code_generator c(p.ast_vec, output);
 	c.init();
 	return 0;
 }

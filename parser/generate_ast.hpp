@@ -3,33 +3,70 @@
 class syntax_validator;
 #include "syntax_validator.hpp"
 
+using ExpressionRet = std::pair<int, int>;
+
 
 namespace generate_ast {
 	class variable : public syntax_validator {
 		public:
-			variable(std::shared_ptr<lexer::LexVector> &lex) : syntax_validator(lex) {
-				
+			variable(std::shared_ptr<lexer::LexVector> &lex, bool &is_variable) : syntax_validator(lex) {
+				last_expression->second = true; // it exists!
+				is_variable = true;
 			}
 			virtual ~variable(){};	
-			std::pair<int, int> check_variable(lexer::token &token, 
+			ExpressionRet check(lexer::token &token, 
 				bool &is_variable, int &potential_last_error, bool &complete);
+			
+			static std::unordered_map<std::string, std::shared_ptr<AST::AnyAST>> var_map;
+
 		private:
-			std::pair<int, int> assign_variable(lexer::token &token, auto &last_expression, bool &is_variable, 
+			ExpressionRet assign(lexer::token &token, auto &last_expression, bool &is_variable, 
 				int line, int &potential_last_error, bool &complete);
 	
 	};
 	class function : public syntax_validator {
 		public:
-			function(std::shared_ptr<lexer::LexVector> &lex) : syntax_validator(lex) {
+			function(std::shared_ptr<lexer::LexVector> &lex, bool &is_function) : syntax_validator(lex) {
+				is_function = true;
+				complete = false;
+				last_expression->second = true;
 
 			};
-			std::pair<int, int> check_function(lexer::token &token, 
-			 bool &is_function, bool &complete);
-		private:
-			std::vector<AST::AnyAST> function_body{};	
-			std::pair<int, int> assign_function(lexer::token &token, 
+			ExpressionRet check(lexer::token &token, 
 			 bool &is_function, bool &complete);
 
+	//		static std::unordered_map<std::string_view, std::vector<std::vector<AST::AnyAST>::iterator>> param_map;
+			/*
+			 * Stores the function pointers by name.
+			 */
+			static std::unordered_map<std::string, std::shared_ptr<AST::AnyAST>> function_map;
+
+		private:
+			std::vector<AST::AnyAST> function_body{};	
+			ExpressionRet assign(lexer::token &token, 
+			 bool &is_function, bool &complete);
+
+	};
+	class if_statement : public syntax_validator {
+		public :
+			if_statement(std::shared_ptr<lexer::LexVector> &lex) : syntax_validator(lex) {
+
+			};
+		bool body_completed{false};
+	};
+	
+	class function_call : public syntax_validator {
+		public:
+			function_call(std::shared_ptr<lexer::LexVector> &lex, bool &is_function_call) : syntax_validator(lex) {
+				last_expression->second = true;
+				is_function_call = true;
+			};
+			virtual ~function_call() {};
+			ExpressionRet check(lexer::token &token, bool &is_function_call, int &line, std::shared_ptr<AST::AnyAST> &last_expr);
+
+		private:
+			ExpressionRet assign(AST::function_call &last_expr, bool &is_function_call, lexer::token &t);
+		
 	};
 };
 

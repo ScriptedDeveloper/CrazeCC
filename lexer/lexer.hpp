@@ -16,7 +16,7 @@ class lexer {
 			std::ifstream target_stream{__path};
 			std::stringstream ss{};
 			ss << target_stream.rdbuf();
-			__contents = std::move(ss.str());
+			__contents = ss.str();
 		};
 		int parse() {
 			std::string curr_token{};
@@ -39,18 +39,22 @@ class lexer {
 					continue;
 				};
 				case '{' : {
+					push_remaining(curr_token);
 					lexer_vec->push_back(token(std::string(1, c)));
 					break;
 				};
 				case '}' : {
+					push_remaining(curr_token);
 					lexer_vec->push_back(token(std::string(1, c)));
 					break;
 				}
 				case '(' : {
+					push_remaining(curr_token);
 					lexer_vec->push_back(token(std::string(1, c)));
 					break;
 				};	
 				case ')' : {
+					push_remaining(curr_token);
 					lexer_vec->push_back(token(std::string(1, c)));
 					break;
 				};
@@ -152,6 +156,11 @@ class lexer {
 	private:
 		std::string __path{};
 		std::string __contents{};
+
+		inline void push_remaining(std::string &curr_token) {
+			if(!curr_token.empty())
+				lexer_vec->push_back(token(std::move(curr_token)));
+		}
 		
 };
 

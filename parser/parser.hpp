@@ -1,3 +1,4 @@
+#pragma once
 #include "ast.hpp"
 #include "syntax_validator.hpp"
 
@@ -11,13 +12,14 @@ class parser {
 					<< std::get<int>(ret_syntax.second) << std::endl;
 				std::exit(1);
 			}
-			ast_vec = std::move(std::get<std::vector<AST::AnyAST>>(ret_syntax.second));
+			ast_vec = std::move(std::get<std::vector<std::shared_ptr<AST::AnyAST>>>(ret_syntax.second));
 
 		};
 		virtual ~parser() {
 
 		};
-		std::vector<AST::AnyAST> ast_vec{};
+		std::vector<std::shared_ptr<AST::AnyAST>> ast_vec{};
+		std::unordered_map<std::string_view, AST::variable> var_map{};
 	protected:	
 		std::shared_ptr<lexer::LexVector> __lex_vec{};
 
