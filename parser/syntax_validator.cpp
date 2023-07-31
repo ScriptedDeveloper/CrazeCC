@@ -126,18 +126,17 @@ std::pair<int, int> syntax_validator::check_curly_brackets(lexer::token &t, std:
 	using namespace AST;
 
 	auto token_data = t.data()[0];
-	auto curr_expr = expression;
+	auto curr_expr = parenthesis_st.top();
 	if(token_data == '{')
 		parenthesis_st.push(expression);
 	else {
-		if(parenthesis_st.empty() || (!std::holds_alternative<if_statement>(*curr_expr) 
+		if(parenthesis_st.empty() || (curr_expr != nullptr && !std::holds_alternative<if_statement>(*curr_expr) 
 		&& !std::holds_alternative<function>(*curr_expr)))
 			/*
 			 * Either the stack is empty or the expression is not one that can hold a body..
 			 * we have a syntax error
 			 */
 			return {ERROR_UNEXPECTED_PARENTHESIS, line};
-		auto top = parenthesis_st.top();
 		function func_expr{};
 		parenthesis_st.pop();
 		if(std::holds_alternative<AST::if_statement>(*curr_expr)) {

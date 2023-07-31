@@ -136,7 +136,7 @@ namespace AST {
 			}
 			
 		std::vector<std::pair<std::string, std::string>> params{}; //first pair member is type, second is name
-		std::vector<std::vector<AnyAST>::iterator> function_body{};
+		std::vector<AnyAST> function_body{};
 		private:
 			bool __defined_keyword{false};
 			bool __defined_params{false};

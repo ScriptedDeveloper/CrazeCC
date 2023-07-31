@@ -1,5 +1,6 @@
 #pragma once
 #include "ast.hpp"
+#include <cstdio>
 class syntax_validator;
 #include "syntax_validator.hpp"
 
@@ -10,7 +11,6 @@ namespace generate_ast {
 	class variable : public syntax_validator {
 		public:
 			variable(std::shared_ptr<lexer::LexVector> &lex, bool &is_variable) : syntax_validator(lex) {
-				last_expression->second = true; // it exists!
 				is_variable = true;
 			}
 			virtual ~variable(){};	
@@ -29,7 +29,6 @@ namespace generate_ast {
 			function(std::shared_ptr<lexer::LexVector> &lex, bool &is_function) : syntax_validator(lex) {
 				is_function = true;
 				complete = false;
-				last_expression->second = true;
 
 			};
 			ExpressionRet check(lexer::token &token, 
@@ -58,7 +57,6 @@ namespace generate_ast {
 	class function_call : public syntax_validator {
 		public:
 			function_call(std::shared_ptr<lexer::LexVector> &lex, bool &is_function_call) : syntax_validator(lex) {
-				last_expression->second = true;
 				is_function_call = true;
 			};
 			virtual ~function_call() {};
@@ -66,6 +64,9 @@ namespace generate_ast {
 
 		private:
 			ExpressionRet assign(AST::function_call &last_expr, bool &is_function_call, lexer::token &t);
+			inline bool is_invisible_char(std::string_view token) {
+				return token[0] == '\t' || token[0] == '\n';
+			}
 		
 	};
 };

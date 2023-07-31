@@ -58,6 +58,9 @@ class lexer {
 					lexer_vec->push_back(token(std::string(1, c)));
 					break;
 				};
+				case '\t' : {
+					continue;
+				}
 				default : {
 					curr_token += c;
 					break;
@@ -146,6 +149,10 @@ class lexer {
 		};	
 		static constexpr std::array<char, 6> operators = {
 			'+', '-', '/', '*', '%', '='
+		};
+
+		static constexpr std::array<std::pair<std::string, int>, data_types.size()> data_sizes = {
+			std::make_pair("int", 4), {"bool", 1}, {"char", 1}, {"void", 1}
 		};
 		using LexVector = std::vector<token>;
 		/* 

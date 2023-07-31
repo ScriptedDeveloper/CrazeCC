@@ -1,5 +1,6 @@
 #include "generate_ast.hpp"
 #include "ast.hpp"
+#include <pstl/execution_defs.h>
 
 //std::unordered_map<std::string_view, std::vector<std::vector<AST::AnyAST>::iterator>> function::param_map{};
 
@@ -15,11 +16,11 @@ ExpressionRet generate_ast::variable::check(lexer::token &token,
 	complete = false;
 	if(token.is_space())
 		return {SYNTAX_SUCCESS, -1}; // ignoring spaces
-	if(!std::holds_alternative<AST::variable>(*last_expression->first) && !token.is_keyword())
+	if(!std::holds_alternative<AST::variable>(*last_expression->first) && !token.is_data_type())
 		return {ERROR_EXPECTED_TYPE, line}; // compiler error...
 	if(!last_expression->second && !token.is_data_type())
 		return {ERROR_EXPECTED_TYPE, line};
-	if(!last_expression)
+	if(!last_expression->second)
 		last_expression->first = std::make_shared<AST::AnyAST>(AST::variable());
 	auto var_obj = std::get<AST::variable>(*last_expression->first);
 	if(token.is_value() && var_obj.defined_value())
@@ -32,6 +33,8 @@ ExpressionRet generate_ast::variable::check(lexer::token &token,
 	 * Error checking done.. basic
 	 * Now lets assign them values
 	 */
+				
+	last_expression->second = true; // it exists!
 	return (assign(token, last_expression, is_variable, line, potential_last_error, complete));
 }
 
@@ -39,6 +42,7 @@ ExpressionRet generate_ast::variable::assign(lexer::token &token, auto &last_exp
 	int line, int &potential_last_error, bool &complete) {
 
 	auto var_obj = std::get<AST::variable>(*last_expression->first);
+
 	if(token.is_data_type()) {
 		var_obj.define_type(token.data());
 		potential_last_error = ERROR_UNKNOWN_VARIABLE;
@@ -51,8 +55,18 @@ ExpressionRet generate_ast::variable::assign(lexer::token &token, auto &last_exp
 		var_obj.define_equal_symbol();
 		is_variable = false;
 		complete = true;	
-		ast_vector.push_back(last_expression->first);
-		var_map[var_obj.get_name().data()] = *ast_vector.rbegin();
+		if(parenthesis_st.empty() || (!parenthesis_st.empty() 
+			&& !std::holds_alternative<AST::function>(*parenthesis_st.top())))
+			/*
+			 * If we are inside a function, add it to the function body, otherwise, it's just a global variable
+			 */
+			ast_vector.push_back(last_expression->first);
+		else {
+			auto top = std::get<AST::function>(*parenthesis_st.top());
+			top.function_body.push_back(*last_expression->first);
+			*parenthesis_st.top() = top;
+		}
+		var_map[var_obj.get_name().data()] = last_expression->first;
 		clear_expression();
 		potential_last_error = SYNTAX_SUCCESS;
 	}
@@ -99,6 +113,8 @@ bool &is_function, bool &complete) {
 		return {ERROR_EXPECTED_FUNCTION_NAME, line};
 	if(my_func.get_parenthesis_count() < 2 && token.is_curly_brackets())
 		return {ERROR_EXPECTED_PARENTHESIS, line};
+
+	last_expression->second = true;
 
 	return assign(token, is_function, complete);
 }
@@ -159,6 +175,7 @@ bool &is_function, bool &complete) {
 			
 		is_function = false;
 		complete = true;
+		last_expression->second = false;
 		function_map[my_func.get_name().data()] = *ast_vector.rbegin();
 
 	}
@@ -170,6 +187,9 @@ bool &is_function, bool &complete) {
 
 
 ExpressionRet generate_ast::function_call::check(lexer::token &token, bool &is_function_call, int &line, std::shared_ptr<AST::AnyAST> &last_expr) {
+	if(is_invisible_char(token.data()))
+		return {SYNTAX_SUCCESS, -1}; // ignore invisible chars
+
 	if(!std::holds_alternative<AST::function_call>(*last_expr))
 		*last_expr = AST::function_call();
 	
@@ -197,6 +217,8 @@ ExpressionRet generate_ast::function_call::check(lexer::token &token, bool &is_f
 	if(token.is_keyword())
 		return {syntax_validator::ERROR_UNEXPECTED_KEYWORD, line};
 	
+	last_expression->second = true; // it exists!
+
 	auto ret = assign(func_call, is_function_call, token);
 	if(last_expr != nullptr)
 		*last_expr = func_call;
