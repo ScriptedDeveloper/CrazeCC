@@ -11,7 +11,7 @@ else()
     add_compile_options(-Wall -Wextra -pedantic -Werror)
 endif()
 
-file(GLOB SOURCES "parser/*.cpp")
+file(GLOB SOURCES "parser/*.cpp" "exception/*.cpp")
 
 add_executable(CrazeCC "main.cpp" ${SOURCES})
 set_property(TARGET CrazeCC PROPERTY COMPILE_WARNING_AS_ERROR ON)

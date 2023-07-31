@@ -1,6 +1,7 @@
 #include "lexer/lexer.hpp"
 #include "parser/parser.hpp"
 #include "code_gen/code_gen.hpp"
+#include "exception/exception.hpp"
 
 int main(int argc, char **argv) {
 	std::string file_name{}, output{};
@@ -22,6 +23,8 @@ int main(int argc, char **argv) {
 	l.parse();
 	parser p(std::move(l.lexer_vec));
 	code_generator c(p.ast_vec, output);
-	c.init();
+	int ret = c.init();
+	if(ret != code_generator::GENERATE_SUCCESS)
+		exception(ret, -1);
 	return 0;
 }

@@ -21,7 +21,6 @@ class syntax_validator {
 		/*
 		 * Kinda similiar to WINAPI, gets the error code in form of basic_string
 		 */
-		static std::string GetLastError(int error);
 		static constexpr int SYNTAX_SUCCESS = -1;
 		static constexpr int ERROR_EXPECTED_VALUE = -2;
 		static constexpr int ERROR_UNKNOWN_VARIABLE = -3; // in case i forgot to catch something in check_variable()

@@ -22,8 +22,7 @@ class code_generator {
 					curr_tree = variable;
 				}
 				if(std::holds_alternative<AST::variable>(curr_tree)) {
-					auto var = std::get<AST::variable>(curr_tree);
-					ret = generate_variable(var);
+					ret = generate_variable(std::get<AST::variable>(curr_tree));
 				} else if(std::holds_alternative<AST::if_statement>(curr_tree)) {
 					/*
 					auto statement = std::get<AST::if_statement>(curr_tree);
@@ -45,9 +44,9 @@ class code_generator {
 			o_file << asm_content;
 			return GENERATE_SUCCESS;
 		}
-		static constexpr int GENERATE_SUCCESS = 0;
-		static constexpr int GENERATE_UNKNOWN_VARIABLE = -10;
-		static constexpr int GENERATE_UNKNOWN_VARIABLE_VALUE = -11;
+		static constexpr int GENERATE_SUCCESS = -30;
+		static constexpr int GENERATE_UNKNOWN_VARIABLE = -20;
+		static constexpr int GENERATE_UNKNOWN_VARIABLE_VALUE = -21;
 	private:
 		std::vector<std::shared_ptr<AST::AnyAST>> ast_vec{};
 		std::string_view file_name{};
@@ -62,7 +61,7 @@ class code_generator {
 			asm_content += expr_asm.data();
 		}
 
-		int generate_variable(AST::variable &var) {
+		int generate_variable(AST::variable var) {
 			auto type = var.get_type();
 			auto unconverted_value = var.get_value();
 			std::string val{};

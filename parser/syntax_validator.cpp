@@ -67,57 +67,6 @@ std::pair<int ,std::variant<int, std::vector<std::shared_ptr<AST::AnyAST>>>> syn
 		return {potential_last_error, line};
 	return {SYNTAX_SUCCESS, std::move(ast_vector)};
 }
-/*
- * Kinda similiar to WINAPI, gets the error code in form of basic_string
- */
-std::string syntax_validator::GetLastError(int error) {
-	switch(error) {
-		case SYNTAX_SUCCESS: {
-			return "SYNTAX_SUCCESS";
-		};
-		case ERROR_EXPECTED_VALUE : {
-			return "ERROR_EXPECTED_VALUE";
-		};
-		case ERROR_UNKNOWN_VARIABLE : {
-			return "ERROR_UNKNOWN_VARIABLE";
-		};
-		case ERROR_EXPECTED_TYPE : {
-			return "ERROR_EXPECTED_TYPE";
-		};
-		case ERROR_EXPECTED_EXPRESSION : {
-			return "ERROR_EXPECTED_EXPRESSION";
-		};
-		case ERROR_EXPECTED_SEMICOLON : {
-			return "ERROR_EXPECTED_SEMICOLON";
-		};
-		case ERROR_EXPECTED_EQUAL_SYMBOL : {
-			return "ERROR_EXPECTED_EQUAL_SYMBOL";
-		};	
-		case ERROR_EXPECTED_FUNCTION_DECLARATION : {
-			return "ERROR_EXPECTED_FUNCTION_DECLARATION";
-		};	
-		case ERROR_EXPECTED_FUNCTION_TYPE : {
-			return "ERROR_EXPECTED_FUNCTION_TYPE";
-		};	
-		case ERROR_EXPECTED_PARAM_VALUE : {
-			return "ERROR_EXPECTED_PARAM_VALUE";
-		};	
-		case ERROR_EXPECTED_PARENTHESIS : {
-			return "ERROR_EXPECTED_PARENTHESIS";
-		};	
-		case ERROR_UNEXPECTED_PARENTHESIS : {
-			return "ERROR_UNEXPECTED_PARENTHESIS";
-		};
-		case SYNTAX_FUNCTION_FINISHED : {
-			return "SYNTAX_FUNCTION_FINISHED";
-		};
-		case ERROR_INVALID_KEYWORD : {
-			return "ERROR_INVALID_KEYWORD";
-		};
-		default : 
-			return "ERROR_GET_ERROR_CODE";
-	};
-}	
 
 std::pair<int, int> syntax_validator::check_curly_brackets(lexer::token &t, std::shared_ptr<AST::AnyAST> &expression) {
 	/*

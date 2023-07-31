@@ -1,6 +1,7 @@
 #pragma once
 #include "ast.hpp"
 #include "syntax_validator.hpp"
+#include "../exception/exception.hpp"
 
 class parser {
 	public:
@@ -8,9 +9,7 @@ class parser {
 			syntax_validator s(vec);
 			auto ret_syntax = s.check_syntax_tokens();
 			if(ret_syntax.first != syntax_validator::SYNTAX_SUCCESS) {
-				std::cerr << "Syntax error! " << s.GetLastError(ret_syntax.first) << " at line : " 
-					<< std::get<int>(ret_syntax.second) << std::endl;
-				std::exit(1);
+				exception(ret_syntax.first, std::get<int>(ret_syntax.second));
 			}
 			ast_vec = std::move(std::get<std::vector<std::shared_ptr<AST::AnyAST>>>(ret_syntax.second));
 
