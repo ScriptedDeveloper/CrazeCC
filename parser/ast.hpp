@@ -166,8 +166,8 @@ namespace AST {
 			inline void define_semicolon() {
 				__defined_semicolon = true;
 			}
-			inline void push_params(variable var) {
-				params.push_back(AnyAST(var));
+			inline void push_params(std::shared_ptr<AnyAST> var) {
+				params.push_back(var);
 			}
 			inline void define_function_name(std::shared_ptr<AST::AnyAST> func) {
 				__function_name = func;
@@ -176,15 +176,22 @@ namespace AST {
 			inline std::shared_ptr<AST::AnyAST> get_function() {
 				return __function_name;
 			}
+			inline void increment_parenthesis_count() {
+				parenthesis_count++;
+			}
+			inline uint8_t get_parenthesis_count() {
+				return parenthesis_count;
+			}
 			
 		private:
 			/*
 			 * Right now, only pass by reference is supported
 			 */
-			std::vector<AST::AnyAST> params{};
+			std::vector<std::shared_ptr<AnyAST>> params{};
 			bool __defined_function_name{false};
 			bool __defined_params{false};
 			bool __defined_semicolon{false};
+			uint8_t parenthesis_count{};
 			std::shared_ptr<AST::AnyAST> __function_name{};
 
 	};

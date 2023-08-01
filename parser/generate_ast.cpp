@@ -234,8 +234,10 @@ ExpressionRet generate_ast::function_call::assign(AST::function_call &last_expr,
 			/*
 			 * We're gonna assume its a parameter
 			 */
-			last_expr.push_params(std::get<AST::variable>(*generate_ast::variable::var_map[t.data()]));
+			last_expr.push_params(generate_ast::variable::var_map[t.data()]);
 		}
+	} else if(t.is_brackets()) {
+		last_expr.increment_parenthesis_count();
 	} else if(t.is_semicolon()) {
 		is_function_call = false;
 		complete = true;

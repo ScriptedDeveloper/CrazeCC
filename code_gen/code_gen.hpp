@@ -126,7 +126,7 @@ class code_generator {
 				init(i, true);
 				asm_instruction += curr_instruction;
 			}
-
+			
 			/*
 			for(auto &i : func.params) {
 				asm_instruction += "push " + std::get<AST::variable>(i.second).memory_location + "\n";
