@@ -1,6 +1,5 @@
 #include "generate_ast.hpp"
 #include "ast.hpp"
-#include <pstl/execution_defs.h>
 
 //std::unordered_map<std::string_view, std::vector<std::vector<AST::AnyAST>::iterator>> function::param_map{};
 
