@@ -10,9 +10,12 @@ int function_gen::generate(AST::function &func) {
 	for(auto &i : func.function_body) {
 		init(i, true);
 		asm_instruction += curr_instruction;
+		curr_instruction.clear();
 	}
 	
 	is_function_body = false;
+	asm_instruction += "pop rbp\nret\n\n";
+	curr_instruction = asm_instruction;
 	append_asm(asm_instruction);
 	return code_generator::GENERATE_SUCCESS;
 

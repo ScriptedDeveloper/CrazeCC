@@ -4,7 +4,7 @@ int variable_gen::generate(AST::variable var) {
 	auto type = var.get_type();
 	auto unconverted_value = var.get_value();
 	std::string val{};
-	if(var.get_type() != "bool")
+	if(var.get_type() != AST::variable::TYPE_BOOL)
 		val = std::move(*unconverted_value.begin());
 	else {
 		if(unconverted_value == "true")
@@ -16,10 +16,10 @@ int variable_gen::generate(AST::variable var) {
 	}
 	std::string asm_type{};
 	int stack_to_reserve{}; // amount of bytes we have to reserve for the variable
-	if(type == "int") {
+	if(type == AST::variable::TYPE_INT) {
 		asm_type = "dword";
 		stack_to_reserve = 4;
-	} else if(type == "char" || type == "bool") {
+	} else if(type == AST::variable::TYPE_CHAR || type == AST::variable::TYPE_BOOL) {
 		asm_type = "byte";
 		stack_to_reserve = 1;
 	} else {

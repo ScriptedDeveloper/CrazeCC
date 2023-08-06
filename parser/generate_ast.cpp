@@ -43,7 +43,7 @@ ExpressionRet generate_ast::variable::assign(lexer::token &token, auto &last_exp
 	auto var_obj = std::get<AST::variable>(*last_expression->first);
 
 	if(token.is_data_type()) {
-		var_obj.define_type(token.data());
+		var_obj.define_type_str(token.data());
 		potential_last_error = ERROR_UNKNOWN_VARIABLE;
 	}
 	else if(token.is_operator()) {
@@ -54,17 +54,7 @@ ExpressionRet generate_ast::variable::assign(lexer::token &token, auto &last_exp
 		var_obj.define_equal_symbol();
 		is_variable = false;
 		complete = true;	
-		if(parenthesis_st.empty() || (!parenthesis_st.empty() 
-			&& !std::holds_alternative<AST::function>(*parenthesis_st.top())))
-			/*
-			 * If we are inside a function, add it to the function body, otherwise, it's just a global variable
-			 */
-			ast_vector.push_back(last_expression->first);
-		else {
-			auto top = std::get<AST::function>(*parenthesis_st.top());
-			top.function_body.push_back(*last_expression->first);
-			*parenthesis_st.top() = top;
-		}
+		function::check_is_function_body();
 		var_map[var_obj.get_name().data()] = last_expression->first;
 		clear_expression();
 		potential_last_error = SYNTAX_SUCCESS;
@@ -116,6 +106,22 @@ bool &is_function, bool &complete) {
 	last_expression->second = true;
 
 	return assign(token, is_function, complete);
+}
+			
+
+void generate_ast::function::check_is_function_body() {
+	if(parenthesis_st.empty() || (!parenthesis_st.empty() 
+		&& !std::holds_alternative<AST::function>(*parenthesis_st.top())))
+		/*
+		 * If we are inside a function, add it to the function body, otherwise, it's just a global variable
+		 */
+		ast_vector.push_back(last_expression->first);
+	else {
+		auto top = std::get<AST::function>(*parenthesis_st.top());
+		top.function_body.push_back(*last_expression->first);
+		*parenthesis_st.top() = top;
+	}
+
 }
 
 
@@ -237,10 +243,14 @@ ExpressionRet generate_ast::function_call::assign(AST::function_call &last_expr,
 		}
 	} else if(t.is_brackets()) {
 		last_expr.increment_parenthesis_count();
-	} else if(t.is_semicolon()) {
-		is_function_call = false;
-		complete = true;
 	}
 
+	if(last_expr.get_parenthesis_count() == 2) {
+		is_function_call = false;
+		complete = true;
+		*last_expression->first = AST::AnyAST(last_expr);
+		function::check_is_function_body();
+	}
+	
 	return {SYNTAX_SUCCESS, -1};
 }

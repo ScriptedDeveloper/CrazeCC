@@ -2,7 +2,6 @@
 #define GEN_CONSTRUCTOR_PARAMS std::vector<std::shared_ptr<AST::AnyAST>> &ast_vec_p, std::string_view file_name_p
 #include <vector>
 #include "../parser/ast.hpp"
-//#include "function_call_gen.hpp"
 #include "../parser/generate_ast.hpp"
 #include <ostream>
 #include <unordered_map>
@@ -19,7 +18,7 @@ class code_generator {
 		}
 		virtual ~code_generator() {};
 
-		int init(AST::AnyAST variable = AST::AnyAST(), bool check_variable = false);
+		int init(AST::AnyAST variable = AST::AnyAST(), const bool check_variable = false);
 
 		static constexpr int GENERATE_SUCCESS = -30;
 		static constexpr int GENERATE_UNKNOWN_VARIABLE = -20;
@@ -37,11 +36,11 @@ class code_generator {
 
 	protected:
 		static bool is_function_body;
-		std::string curr_instruction{}; // for function body
+		static std::string curr_instruction; // for function body
 		static int rbp_count; // for the stack
 		static std::string asm_content;
 
-		int get_byte_size(AST::function &func);
+		int get_byte_size(const AST::function &func);
 
 		inline void append_asm(std::string_view expr_asm) {
 			asm_content += expr_asm.data();

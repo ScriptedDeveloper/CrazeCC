@@ -152,7 +152,7 @@ class lexer {
 		};
 
 		static constexpr std::array<std::pair<std::string, int>, data_types.size()> data_sizes = {
-			std::make_pair("int", 4), {"bool", 1}, {"char", 1}, {"void", 1}
+			std::make_pair("int", 8), {"bool", 1}, {"char", 1}, {"void", 1}
 		};
 		using LexVector = std::vector<token>;
 		/* 

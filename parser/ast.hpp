@@ -17,7 +17,7 @@ namespace AST {
 		public:
 			variable() {};
 			inline bool defined_type() {
-				return !type.empty();
+				return type != 0;
 			}
 			inline bool defined_equal_symbol() {
 				return __defined_equal_symbol;
@@ -31,9 +31,37 @@ namespace AST {
 			inline void define_name(std::string_view name_param) {
 				name = name_param.data();
 			}
-			inline void define_type(std::string_view type_param) {
-				type = type_param.data();
+			inline void define_type(const uint8_t type_param) {
+				type = type_param;
+				switch(type) {
+					case TYPE_INT : {
+						type_str = "int";
+						break;
+					};
+					case TYPE_CHAR : {
+						type_str = "char";
+						break;
+					};	
+					case TYPE_VOID : {
+						type_str = "void";
+						break;
+					};	
+					case TYPE_BOOL : {
+						type_str = "bool";
+						break;
+					};
+				};
 			}	
+			inline void define_type_str(std::string_view type_param) {
+				if(type_param == "int")
+					define_type(TYPE_INT);
+				else if(type_param == "bool")
+					define_type(TYPE_BOOL);
+				else if(type_param == "char")
+					define_type(TYPE_CHAR);
+				else
+					define_type(TYPE_VOID);
+			}
 			inline void define_value(std::string_view type_value) {
 				value = type_value.data(); }
 			inline void define_equal_symbol() {
@@ -42,8 +70,11 @@ namespace AST {
 			inline std::string_view get_name() {
 				return name;
 			}
-			inline std::string_view get_type() {
+			inline uint8_t get_type() {
 				return type;
+			}
+			inline std::string_view get_type_str() {
+				return type_str;
 			}
 			inline std::string_view get_value() {
 				return value;
@@ -51,10 +82,16 @@ namespace AST {
 		std::string instruction{};
 		std::string memory_location{};
 		static constexpr std::string instruction_type{"mov"};
+
+		static constexpr uint8_t TYPE_INT = 1;
+		static constexpr uint8_t TYPE_CHAR = 2;
+		static constexpr uint8_t TYPE_VOID = 3;
+		static constexpr uint8_t TYPE_BOOL = 4;
 		private:
 			std::string name{};
 			bool __defined_equal_symbol{false};
-			std::string type{};
+			uint8_t type{};
+			std::string type_str{};
 			std::string value{}; // not going to overcomplicate things here with std::variant...
 							
 	};	
@@ -182,12 +219,12 @@ namespace AST {
 			inline uint8_t get_parenthesis_count() {
 				return parenthesis_count;
 			}
+			std::vector<std::shared_ptr<AnyAST>> params{};
 			
 		private:
 			/*
 			 * Right now, only pass by reference is supported
 			 */
-			std::vector<std::shared_ptr<AnyAST>> params{};
 			bool __defined_function_name{false};
 			bool __defined_params{false};
 			bool __defined_semicolon{false};

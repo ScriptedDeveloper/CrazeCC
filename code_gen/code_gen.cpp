@@ -2,10 +2,11 @@
 		
 
 std::string code_generator::asm_content{"BITS 64\n"};
+std::string code_generator::curr_instruction{};
 int code_generator::rbp_count{};
 bool code_generator::is_function_body{false};
 
-int code_generator::init(AST::AnyAST variable, bool check_variable) {
+int code_generator::init(AST::AnyAST variable, const bool check_variable) {
 	is_function_body = check_variable;
 	for(auto curr_tree_it : ast_vec) {
 		auto curr_tree = *curr_tree_it;
@@ -41,12 +42,13 @@ int code_generator::init(AST::AnyAST variable, bool check_variable) {
 	return GENERATE_SUCCESS;
 }	
 
-int code_generator::get_byte_size(AST::function &func) {
+int code_generator::get_byte_size(const AST::function &func) {
 	int bytes{};
 	for(auto &i : func.function_body) {
 		if(std::holds_alternative<AST::variable>(i)) {
+			auto tmp_i = i;
 			bytes += std::find_if(lexer::data_sizes.begin(), lexer::data_sizes.end(), [&](auto &pair) {
-				return pair.first == std::get<AST::variable>(i).get_type();
+				return pair.first == std::get<AST::variable>(tmp_i).get_type_str();
 					})->second;
 		}
 	}
