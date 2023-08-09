@@ -8,6 +8,10 @@ class function_gen : public code_generator {
 		};
 		int generate(AST::function &func);
 
+	private:
+		 std::string asm_instruction{};
+		inline void restore_stack_ptr(const auto &bytes);
+		inline void set_global_function(AST::function &func);
 };
 
 
