@@ -2,6 +2,7 @@
 #include "parser/parser.hpp"
 #include "code_gen/code_gen.hpp"
 #include "exception/exception.hpp"
+#include "preprocessor/preprocessor.hpp"
 
 int main(int argc, char **argv) {
 	std::string file_name{}, output{};
@@ -21,6 +22,8 @@ int main(int argc, char **argv) {
 	}
 	lexer l(file_name);
 	l.parse();
+	preprocessor prep(l.lexer_vec);
+	prep.init();
 	parser p(std::move(l.lexer_vec));
 	code_generator c(p.ast_vec, output);
 	int ret = c.init();

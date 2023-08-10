@@ -233,5 +233,25 @@ namespace AST {
 
 	};
 
+	class preprocessor_definitions {
+		public:
+			preprocessor_definitions() {};
+			virtual ~preprocessor_definitions() {};
+
+			inline void set_exclamation_mark() {
+				__set_exclamation_mark = true;
+			}
+			inline void set_expressions() {
+				__set_expressions = true;
+			}
+			inline void set_keyword() {
+				__set_keyword = true;
+			}
+		private:
+			bool __set_exclamation_mark{false};
+			bool __set_keyword{false};
+			bool __set_expressions{false};
+	};
 
 };
+

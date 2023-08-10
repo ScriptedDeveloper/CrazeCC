@@ -84,6 +84,8 @@ class lexer {
 						__is_operator = true;
 					else if(std::find(keywords.begin(), keywords.end(), __data) != keywords.end())
 						__is_keyword = true;
+					else if(*__data.begin() == '#')
+						__is_hashtag = true;
 					else if(std::find(data_types.begin(), data_types.end(), __data) != data_types.end())
 						__is_data_type = true;
 					else {
@@ -121,9 +123,13 @@ class lexer {
 			inline bool is_curly_brackets() {
 				return __data == "{" || __data == "}";
 			}
+			inline bool is_hashtag() {
+				return __is_hashtag;
+			}
 			private:
 				std::string __data{};
 				bool __is_space{false};
+				bool __is_hashtag{false};
 				bool __is_semicolon{false};
 				bool __is_keyword{false};
 				bool __is_data_type{false};

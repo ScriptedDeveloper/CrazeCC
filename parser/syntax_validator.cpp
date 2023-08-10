@@ -18,11 +18,6 @@ std::pair<int ,std::variant<int, std::vector<std::shared_ptr<AST::AnyAST>>>> syn
 	/*
 	 * the int in the pair tells us whether the expression is existing or not.
 	 */
-	bool is_variable{false};
-	bool is_function{};
-	bool is_if{false};
-	bool is_function_call{false};
-	int potential_last_error{SYNTAX_SUCCESS}; // in case we go to the next expression, we can look back in case something's missing
 	for(auto token : *__lex_vec) {
 		if(complete && potential_last_error != SYNTAX_SUCCESS)
 			return {potential_last_error, line}; // something went wrong in the past line
@@ -63,6 +58,7 @@ std::pair<int ,std::variant<int, std::vector<std::shared_ptr<AST::AnyAST>>>> syn
 				return {ERROR_INVALID_KEYWORD, line};
 		}
 	}
+	preprocessor p(__lex_vec);
 	if(!complete)
 		return {potential_last_error, line};
 	return {SYNTAX_SUCCESS, std::move(ast_vector)};

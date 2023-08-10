@@ -1,5 +1,6 @@
 #pragma once
 #include "../lexer/lexer.hpp"
+#include "../preprocessor/preprocessor.hpp"
 #include "ast.hpp"
 #include <unordered_map>
 #include <stack>
