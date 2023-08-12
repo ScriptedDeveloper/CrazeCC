@@ -23,22 +23,17 @@ class code_generator {
 		static constexpr int GENERATE_SUCCESS = -30;
 		static constexpr int GENERATE_UNKNOWN_VARIABLE = -20;
 		static constexpr int GENERATE_UNKNOWN_VARIABLE_VALUE = -21;
+		static std::string asm_content;
 	private:
 		std::vector<std::shared_ptr<AST::AnyAST>> ast_vec{};
 		std::string_view file_name{};
-
-		/*
-		int generate_if_statement(AST::if_statement &statement) {
-			return GENERATE_SUCCESS;
-		}
-		*/
+		bool __is_debug{};
 
 
 	protected:
 		static bool is_function_body;
 		static std::string curr_instruction; // for function body
 		static int rbp_count; // for the stack
-		static std::string asm_content;
 
 		int get_byte_size(const AST::function &func);
 

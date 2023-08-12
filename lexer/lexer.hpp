@@ -12,11 +12,15 @@
 
 class lexer {
 	public:
-		lexer(std::string_view file) : __path(file.data()) {
-			std::ifstream target_stream{__path};
-			std::stringstream ss{};
-			ss << target_stream.rdbuf();
-			__contents = ss.str();
+		lexer(std::string_view file = "", std::string_view content = "") : __path(file.data()) {
+			if (content.empty()) {
+				std::ifstream target_stream{__path};
+				std::stringstream ss{};
+				ss << target_stream.rdbuf();
+				__contents = ss.str();
+			} else {
+				__path = content.data();
+			}
 		};
 		int parse() {
 			std::string curr_token{};
@@ -176,4 +180,3 @@ class lexer {
 		}
 		
 };
-

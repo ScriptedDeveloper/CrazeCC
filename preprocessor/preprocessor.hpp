@@ -7,7 +7,7 @@
 
 class preprocessor {
 	public:
-		preprocessor(std::shared_ptr<std::vector<lexer::token>> &lex_vec_p) {
+		preprocessor(std::shared_ptr<lexer::LexVector> &lex_vec_p) {
 			lex_vec = lex_vec_p;
 		}
 		virtual ~preprocessor() {

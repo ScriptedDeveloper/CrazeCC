@@ -36,7 +36,6 @@ int code_generator::init(AST::AnyAST variable, const bool check_variable) {
 	/*
 	 * Ok, we have generated our asm code. Time to put inside our target file
 	 */
-
 	std::ofstream o_file(file_name.data());
 	o_file << asm_content;
 	return GENERATE_SUCCESS;

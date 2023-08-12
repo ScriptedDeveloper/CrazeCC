@@ -169,15 +169,7 @@ bool &is_function, bool &complete) {
 		my_func.increment_curly_parenthesis_count();
 		parenthesis_st.push(last_expression->first);
 		ast_vector.push_back(last_expression->first);
-/*
-		for(auto &i : param_map) {
-			auto it = std::find(i.second.begin(), i.second.end(), ast_vector.end());
-			if(it != i.second.end()) {
-				*it = ast_vector.begin();
-			}
-		}	
-		*/
-			
+		
 		is_function = false;
 		complete = true;
 		last_expression->second = false;
@@ -225,7 +217,7 @@ ExpressionRet generate_ast::function_call::check(lexer::token &token, bool &is_f
 	last_expression->second = true; // it exists!
 
 	auto ret = assign(func_call, is_function_call, token);
-	if(last_expr != nullptr)
+	if(last_expression->first)
 		*last_expr = func_call;
 	return ret;
 }
@@ -250,6 +242,7 @@ ExpressionRet generate_ast::function_call::assign(AST::function_call &last_expr,
 		complete = true;
 		*last_expression->first = AST::AnyAST(last_expr);
 		function::check_is_function_body();
+		clear_expression();
 	}
 	
 	return {SYNTAX_SUCCESS, -1};

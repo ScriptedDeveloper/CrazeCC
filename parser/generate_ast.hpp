@@ -6,7 +6,6 @@ class syntax_validator;
 
 using ExpressionRet = std::pair<int, int>;
 
-
 namespace generate_ast {
 	class variable : public syntax_validator {
 		public:
