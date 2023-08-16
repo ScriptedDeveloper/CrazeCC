@@ -12,7 +12,59 @@ namespace AST {
 	class if_statement;
 	class function;
 	class function_call;
-	using AnyAST = std::variant<variable, if_statement, function, function_call>;
+	class return_ast;
+	using AnyAST = std::variant<variable, if_statement, function, function_call, return_ast>;
+
+	class function_call {
+		public:
+			function_call() {};
+			virtual ~function_call() {};
+
+			inline void define_params() {
+				__defined_params = true;
+			}
+			inline bool defined_params() {
+				return __defined_params;
+			}
+			inline bool defined_function_name() {
+				return __defined_function_name;
+			}
+			inline bool defined_semicolon() {
+				return __defined_semicolon;
+			}
+			inline void define_semicolon() {
+				__defined_semicolon = true;
+			}
+			inline void push_params(std::shared_ptr<AnyAST> var) {
+				params.push_back(var);
+			}
+			inline void define_function_name(std::shared_ptr<AST::AnyAST> func) {
+				__function_name = func;
+				__defined_function_name = true;
+			}
+			inline std::shared_ptr<AST::AnyAST> get_function() {
+				return __function_name;
+			}
+			inline void increment_parenthesis_count() {
+				parenthesis_count++;
+			}
+			inline uint8_t get_parenthesis_count() {
+				return parenthesis_count;
+			}
+			std::vector<std::shared_ptr<AnyAST>> params{};
+			
+		private:
+			/*
+			 * Right now, only pass by reference is supported
+			 */
+			bool __defined_function_name{false};
+			bool __defined_params{false};
+			bool __defined_semicolon{false};
+			uint8_t parenthesis_count{};
+			std::shared_ptr<AST::AnyAST> __function_name{};
+
+	};	
+
 	class variable {
 		public:
 			variable() {};
@@ -23,7 +75,7 @@ namespace AST {
 				return __defined_equal_symbol;
 			}
 			inline bool defined_value() {
-				return !value.empty();
+				return !value.empty() || call_function;
 			}
 			inline bool defined_name() {
 				return !name.empty();
@@ -62,8 +114,14 @@ namespace AST {
 				else
 					define_type(TYPE_VOID);
 			}
-			inline void define_value(std::string_view type_value) {
-				value = type_value.data(); }
+			inline void define_value(std::variant<std::string_view, function_call> type_value) {
+				if(std::holds_alternative<function_call>(type_value)) {
+					call_function = true;
+					call = std::get<function_call>(type_value);
+				} else {
+					value = std::get<std::string_view>(type_value).data(); 
+				}
+			}
 			inline void define_equal_symbol() {
 				__defined_equal_symbol = true;
 			}
@@ -76,7 +134,9 @@ namespace AST {
 			inline std::string_view get_type_str() {
 				return type_str;
 			}
-			inline std::string_view get_value() {
+			inline std::variant<std::string, AST::function_call> get_value() {
+				if(call_function)
+					return call;
 				return value;
 			}
 		std::string instruction{};
@@ -93,7 +153,9 @@ namespace AST {
 			uint8_t type{};
 			std::string type_str{};
 			std::string value{}; // not going to overcomplicate things here with std::variant...
-							
+			
+			bool call_function{false};
+			function_call call;
 	};	
 	class if_statement {
 		public:
@@ -183,54 +245,31 @@ namespace AST {
 			std::string __name{}, __type{};
 	};
 
-	class function_call {
+
+	class return_ast {
 		public:
-			function_call() {};
-			virtual ~function_call() {};
-
-			inline void define_params() {
-				__defined_params = true;
-			}
-			inline bool defined_params() {
-				return __defined_params;
-			}
-			inline bool defined_function_name() {
-				return __defined_function_name;
-			}
-			inline bool defined_semicolon() {
-				return __defined_semicolon;
-			}
-			inline void define_semicolon() {
-				__defined_semicolon = true;
-			}
-			inline void push_params(std::shared_ptr<AnyAST> var) {
-				params.push_back(var);
-			}
-			inline void define_function_name(std::shared_ptr<AST::AnyAST> func) {
-				__function_name = func;
-				__defined_function_name = true;
-			}
-			inline std::shared_ptr<AST::AnyAST> get_function() {
-				return __function_name;
-			}
-			inline void increment_parenthesis_count() {
-				parenthesis_count++;
-			}
-			inline uint8_t get_parenthesis_count() {
-				return parenthesis_count;
-			}
-			std::vector<std::shared_ptr<AnyAST>> params{};
+			return_ast() {};
+			virtual ~return_ast() {};
 			
-		private:
-			/*
-			 * Right now, only pass by reference is supported
-			 */
-			bool __defined_function_name{false};
-			bool __defined_params{false};
-			bool __defined_semicolon{false};
-			uint8_t parenthesis_count{};
-			std::shared_ptr<AST::AnyAST> __function_name{};
+			inline void define_value(std::string_view data) {
+				value = data;
+			}
+			inline void define_keyword() {
+				set_keyword = true;
+			}
+			inline std::string get_value() {
+				return value;
+			}
+			inline bool defined_keyword() {
+				return set_keyword;
+			}
+			inline bool defined_value() {
+				return !value.empty();
+			}
 
+		private:
+			std::string value{};
+			bool set_keyword{false};
 	};
 
 	class preprocessor_definitions {

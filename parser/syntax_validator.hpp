@@ -1,7 +1,7 @@
 #pragma once
 #include "../lexer/lexer.hpp"
-#include "../preprocessor/preprocessor.hpp"
 #include "ast.hpp"
+#include "../preprocessor/preprocessor.hpp"
 #include <unordered_map>
 #include <stack>
 #include <memory> 
@@ -10,6 +10,7 @@
 class exception_handling;
 class syntax_validator;
 
+using ExpressionRet = std::pair<int, int>;
 
 class syntax_validator {
 	public:
@@ -40,7 +41,11 @@ class syntax_validator {
 		static constexpr int ERROR_INVALID_KEYWORD = -18;
 		static constexpr int ERROR_UNKNOWN_FUNCTION_CALL = -19;
 		static constexpr int ERROR_UNEXPECTED_SEMICOLON = -20;
-		static constexpr int ERROR_UNEXPECTED_KEYWORD = -21;
+		static constexpr int ERROR_UNEXPECTED_KEYWORD = -21;	
+
+		int potential_last_error{SYNTAX_SUCCESS}; // in case we go to the next 
+							  // expression, we can look back in case something's missing
+
 		
 	protected:	
 		/*
@@ -71,6 +76,8 @@ class syntax_validator {
 		}	
 		*/
 		std::pair<int, int> check_curly_brackets(lexer::token &t, std::shared_ptr<AST::AnyAST> &expression);
+		ExpressionRet check_keyword_tokens(lexer::token &token);
+
 		/*
 		 * for check_syntax_tokens()
 		 */
@@ -78,8 +85,8 @@ class syntax_validator {
 		bool is_function{};
 		bool is_if{false};
 		bool is_function_call{false};
-		int potential_last_error{SYNTAX_SUCCESS}; // in case we go to the next 
-							  // expression, we can look back in case something's missing
+		bool is_return{false};
+		bool is_keyword{false};
 
 };
 #include "generate_ast.hpp"

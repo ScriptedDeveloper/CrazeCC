@@ -1,7 +1,5 @@
 #include "syntax_validator.hpp"
 #include "ast.hpp"
-#include "generate_ast.hpp"
-
 /*
  * Static variable declarations
  */
@@ -18,30 +16,30 @@ std::pair<int ,std::variant<int, std::vector<std::shared_ptr<AST::AnyAST>>>> syn
 	/*
 	 * the int in the pair tells us whether the expression is existing or not.
 	 */
-	for(auto token : *__lex_vec) {
-		if(complete && potential_last_error != SYNTAX_SUCCESS)
+
+	for(auto token : *__lex_vec) {	
+		auto ret = check_keyword_tokens(token);
+		if(ret.first != SYNTAX_SUCCESS && ret.first != ERROR_INVALID_KEYWORD)
+			return ret;
+		else if(ret.first != ERROR_INVALID_KEYWORD)
+			continue;
+		else if(complete && potential_last_error != SYNTAX_SUCCESS)
 			return {potential_last_error, line}; // something went wrong in the past line
 		if(is_variable || (token.is_data_type() && !last_expression->second)) {
 			generate_ast::variable v(__lex_vec, is_variable);
 			auto variable_ret = v.check(token, is_variable, potential_last_error, complete);
 			if(variable_ret.first != SYNTAX_SUCCESS)
 				return variable_ret;
-			if(!is_variable) { // token is a semicolon, variable declaration has ended
-				clear_expression();
-			}
-		} else if(is_if || (token.is_keyword() && token.data() == *lexer::keywords.begin())) {
+
+		} else if(is_if || (token.is_keyword() && token.data() == lexer::keywords.begin()->first)) {
 			/*
 			auto if_ret = check_if_statement(token, is_if, potential_last_error, complete);
 			if(if_ret.first != SYNTAX_SUCCESS)
 				return if_ret;
 				*/
-		} else if(token.is_semicolon())
+		} else if(token.is_semicolon()) {
 			line++;
-		else if(is_function || (token.is_keyword() && token.data() == *lexer::keywords.rbegin())) {
-			generate_ast::function f(__lex_vec, is_function);
-			auto func_ret = f.check(token, is_function, complete); // need check last error
-			if(func_ret.first != SYNTAX_SUCCESS)
-				return func_ret;
+	
 		} else if(token.is_curly_brackets()) {
 			auto ret = check_curly_brackets(token, last_expression->first);
 			clear_expression(); // we no longer need the other expression
@@ -53,15 +51,45 @@ std::pair<int ,std::variant<int, std::vector<std::shared_ptr<AST::AnyAST>>>> syn
 			auto call_ret = f_call.check(token, is_function_call, line, last_expression->first);
 			if(call_ret.first != SYNTAX_SUCCESS)
 				return call_ret;
-		} else {
-			if(!token.is_space())
-				return {ERROR_INVALID_KEYWORD, line};
 		}
 	}
 	preprocessor p(__lex_vec);
 	if(!complete)
 		return {potential_last_error, line};
 	return {SYNTAX_SUCCESS, std::move(ast_vector)};
+}
+
+
+ExpressionRet syntax_validator::check_keyword_tokens(lexer::token &token) { 
+	if(token.is_space())
+		return {SYNTAX_SUCCESS, -1};
+
+	auto it = std::find_if(lexer::keywords.begin(), lexer::keywords.end(), [&](const auto &pair) {
+		return pair.first == token.data();
+	});
+	int keyword = (it == lexer::keywords.end()) ? -1 : it->second;
+
+	bool has_computed{true};
+	if(keyword == lexer::RETURN_KEYWORD || is_return) {
+		generate_ast::return_gen ret_obj(__lex_vec, is_return);
+		auto ret = ret_obj.check(token, is_return, line, last_expression->first);
+		if(ret.first != SYNTAX_SUCCESS)
+			return ret;
+
+	} else if(is_function || keyword == lexer::DEF_KEYWORD) {
+		generate_ast::function f(__lex_vec, is_function);
+		auto func_ret = f.check(token, is_function, complete); // need check last error
+		if(func_ret.first != SYNTAX_SUCCESS)
+			return func_ret;
+	} else
+		has_computed = false;
+	
+	if(it == lexer::keywords.end() && !has_computed) {
+
+		return {ERROR_INVALID_KEYWORD, line};
+	}
+
+	return {SYNTAX_SUCCESS, -1};
 }
 
 std::pair<int, int> syntax_validator::check_curly_brackets(lexer::token &t, std::shared_ptr<AST::AnyAST> &expression) {

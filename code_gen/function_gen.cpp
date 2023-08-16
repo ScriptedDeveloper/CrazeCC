@@ -19,7 +19,6 @@ int function_gen::generate(AST::function &func) {
 	 */
 	restore_stack_ptr(rsp_bytes);
 
-	is_function_body = false;
 	asm_instruction += "pop rbp\nret\n\n";
 	append_asm(asm_instruction);
 	return code_generator::GENERATE_SUCCESS;

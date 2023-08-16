@@ -2,27 +2,34 @@
 #include "code_gen.hpp"
 	
 
+std::array<std::pair<const std::string, bool>, 8> function_call_gen::register_order = 
+		{std::make_pair("rax", false), 
+		{"rbx", false}, {"rcx", false}, {"rdx", false}, 
+		{"rsi", false}, {"rsi", false},  {"rdi", false}, {"rbp", false}};
+
+
 int function_call_gen::generate(AST::function_call &call) {
 	std::string asm_instruction{};
 	
 	for(auto &i : call.params) {
 		auto curr_register = get_next_register();
 		AST::variable var = std::get<AST::variable>(*i);
+		auto val = std::get<std::string>(var.get_value());
 		asm_instruction += "mov " + curr_register->first + ", ";
 		switch(var.get_type()) {	
 			case AST::variable::TYPE_CHAR : {
-				asm_instruction += std::to_string(var.get_value()[0] - '0');
+				asm_instruction += std::to_string(val[0] - '0');
 				break;
 			};	
 			case AST::variable::TYPE_BOOL : {
-				if(var.get_value() == "true")
+				if(val == "true")
 					asm_instruction += "1";
 				else
 					asm_instruction += "0";
 				break;
 			};
 			default: {
-				asm_instruction += var.get_value();
+				asm_instruction += val;
 				break;
 			}
 		}

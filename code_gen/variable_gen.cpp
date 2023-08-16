@@ -1,18 +1,30 @@
 #include "variable_gen.hpp"
+#include "function_call_gen.hpp"
 
 int variable_gen::generate(AST::variable var) {
 	auto type = var.get_type();
-	auto unconverted_value = var.get_value();
 	std::string val{};
-	if(var.get_type() != AST::variable::TYPE_BOOL)
-		val = std::move(*unconverted_value.begin());
-	else {
-		if(unconverted_value == "true")
-			val = "1";
-		else if(unconverted_value == "false")
-			val = "0";
-		else
-			return code_generator::GENERATE_UNKNOWN_VARIABLE_VALUE;
+	if(std::holds_alternative<std::string>(var.get_value())) {
+		auto unconverted_value = std::get<std::string>(var.get_value());
+		if(var.get_type() != AST::variable::TYPE_BOOL)
+			val = std::move(*unconverted_value.begin());
+		else {
+			if(unconverted_value == "true")
+				val = "1";
+			else if(unconverted_value == "false")
+				val = "0";
+			else
+				return code_generator::GENERATE_UNKNOWN_VARIABLE_VALUE;
+		}
+	} else {
+		auto obj = std::get<AST::function_call>(var.get_value());
+		function_call_gen g(ast_vec, file_name);
+		auto tmp = is_function_body;
+		is_function_body = true;
+		g.generate(obj);
+		is_function_body = tmp;
+		var.instruction += g.curr_instruction;
+		val += "eax"; // we save return val in eax for now
 	}
 	std::string asm_type{};
 	int stack_to_reserve{}; // amount of bytes we have to reserve for the variable
@@ -30,7 +42,7 @@ int variable_gen::generate(AST::variable var) {
 	 */
 	var.memory_location = "rbp - " + std::to_string(rbp_count + stack_to_reserve);
 	asm_type += std::string("[") + var.memory_location + "], " + val + "\n";
-	var.instruction = var.instruction_type + " " + std::move(asm_type);
+	var.instruction += var.instruction_type + " " + std::move(asm_type);
 	if(!is_function_body)
 		append_asm(var.instruction);
 	rbp_count += stack_to_reserve;

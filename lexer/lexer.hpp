@@ -19,7 +19,7 @@ class lexer {
 				ss << target_stream.rdbuf();
 				__contents = ss.str();
 			} else {
-				__path = content.data();
+				__contents = content.data();
 			}
 		};
 		int parse() {
@@ -86,7 +86,9 @@ class lexer {
 					else if(__data.size() == 1 && std::find(operators.begin(), 
 						operators.end(), *__data.begin()) != operators.end())
 						__is_operator = true;
-					else if(std::find(keywords.begin(), keywords.end(), __data) != keywords.end())
+					else if(std::find_if(keywords.begin(), keywords.end(), [&](const auto &pair) {
+						return pair.first == __data;
+								}) != keywords.end())
 						__is_keyword = true;
 					else if(*__data.begin() == '#')
 						__is_hashtag = true;
@@ -151,8 +153,15 @@ class lexer {
 				static constexpr std::array<char, 5> brackets = {'(', ')', '{', '}'};
 
 		};
-		static constexpr std::array<std::string, 4> keywords = {
-			"if", "elif", "else", "def"
+		static constexpr int IF_KEYWORD{1};
+		static constexpr int ELIF_KEYWORD{2};
+		static constexpr int ELSE_KEYWORD{3};
+		static constexpr int DEF_KEYWORD{4};
+		static constexpr int RETURN_KEYWORD{5};
+		static constexpr std::array<std::pair<std::string, int>, 5> keywords = {
+			std::make_pair("if", IF_KEYWORD), {"elif", ELIF_KEYWORD}, 
+			{"else", ELSE_KEYWORD}, {"def", DEF_KEYWORD},
+			{"return", RETURN_KEYWORD}
 		};
 		static constexpr std::array<std::string, 4> data_types = {
 			"int", "bool", "char", "void"

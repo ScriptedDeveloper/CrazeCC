@@ -9,6 +9,7 @@
 class variable_gen;
 class function_gen;
 class function_call_gen;
+class return_gen;
 
 class code_generator {
 	public:
@@ -43,5 +44,6 @@ class code_generator {
 };
 
 #include "function_gen.hpp"
+#include "return_gen.hpp"
 #include "variable_gen.hpp"
 #include "function_call_gen.hpp"

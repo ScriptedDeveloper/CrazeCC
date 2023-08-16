@@ -40,7 +40,7 @@ ExpressionRet generate_ast::variable::check(lexer::token &token,
 ExpressionRet generate_ast::variable::assign(lexer::token &token, auto &last_expression, bool &is_variable, 
 	int line, int &potential_last_error, bool &complete) {
 
-	auto var_obj = std::get<AST::variable>(*last_expression->first);
+	AST::variable var_obj = std::get<AST::variable>(*last_expression->first);
 
 	if(token.is_data_type()) {
 		var_obj.define_type_str(token.data());
@@ -56,13 +56,25 @@ ExpressionRet generate_ast::variable::assign(lexer::token &token, auto &last_exp
 		complete = true;	
 		function::check_is_function_body();
 		var_map[var_obj.get_name().data()] = last_expression->first;
-		clear_expression();
+		clear_expression(); // token is a semicolon, variable declaration has ended
 		potential_last_error = SYNTAX_SUCCESS;
 	}
-	else if(token.is_value()) {
+	else if(token.is_value() || token.is_brackets()) {
 		if(var_obj.defined_equal_symbol()) {
-			var_obj.define_value(token.data());
-			potential_last_error = ERROR_EXPECTED_SEMICOLON;
+			auto it = function::function_map.find(token.data());
+			if(it == function::function_map.end() && !token.is_brackets()) {
+				var_obj.define_value(token.data());
+				potential_last_error = ERROR_EXPECTED_SEMICOLON;
+			} else {
+				if(std::holds_alternative<std::string>(var_obj.get_value()))
+					var_obj.define_value(AST::function_call());
+				auto obj = std::get<AST::function_call>(var_obj.get_value());
+				auto ptr = std::make_shared<AST::AnyAST>(AST::AnyAST(obj));
+				generate_ast::function_call f_(lex_vec, is_function_call, true);
+				f_.check(token, is_function_call, line, ptr);
+				complete = false;
+				var_obj.define_value(std::get<AST::function_call>(*ptr));
+			}
 		}
 		else {
 			var_obj.define_name(token.data()); // we gonna assume its the variable name
@@ -101,7 +113,13 @@ bool &is_function, bool &complete) {
 	if(!my_func.defined_name() && token.is_curly_brackets()) 
 		return {ERROR_EXPECTED_FUNCTION_NAME, line};
 	if(my_func.get_parenthesis_count() < 2 && token.is_curly_brackets())
-		return {ERROR_EXPECTED_PARENTHESIS, line};
+		return {ERROR_EXPECTED_PARENTHESIS, line};	
+	if(token.is_curly_brackets() && my_func.get_curly_parenthesis_count() == 2)
+			return {ERROR_UNEXPECTED_PARENTHESIS, line};
+	if(((token.is_value() && my_func.defined_name())) && (my_func.params.empty() 
+			|| my_func.params.rbegin()->first.empty() ))
+		return {ERROR_EXPECTED_PARAM_VALUE, line};
+
 
 	last_expression->second = true;
 
@@ -138,15 +156,16 @@ bool &is_function, bool &complete) {
 			 * Okay, now we have to define the param type.
 			 */
 			param_vec->push_back({token.data(), ""});
-		} else 
+			potential_last_error = ERROR_EXPECTED_PARAM_VALUE;
+		} else {  
 			my_func.define_type(token.data());
+			potential_last_error = ERROR_EXPECTED_FUNCTION_NAME;
+		}
 		
 	}
 	else if(token.is_value()) {
 		if(my_func.defined_name()) {
 			auto param_vec = &my_func.params;	
-			if(param_vec->empty() || param_vec->rbegin()->first.empty())
-				return {ERROR_EXPECTED_PARAM_VALUE, line};
 			/*
 			 * Now we have to define the param name of last param
 			 */
@@ -154,26 +173,29 @@ bool &is_function, bool &complete) {
 			/*
 			 * Once the function is complete, we can assign it. Right now our object is incomplete
 			 */
+			potential_last_error = ERROR_EXPECTED_PARENTHESIS;
 		} else {
 			my_func.define_name(token.data());
+			potential_last_error = ERROR_EXPECTED_PARENTHESIS;
 		}
 	} else if(token.is_brackets()) {
-		if(my_func.get_parenthesis_count() >= 2)
-			return {ERROR_UNEXPECTED_PARENTHESIS, line};
 		my_func.increment_parenthesis_count();
 		if(my_func.get_parenthesis_count() == 2)
 			my_func.define_params();
+
+		potential_last_error = ERROR_EXPECTED_PARENTHESIS;
 	} else if(token.is_curly_brackets()) {
-		if(my_func.get_curly_parenthesis_count() == 2)
-			return {ERROR_UNEXPECTED_PARENTHESIS, line};
+	
 		my_func.increment_curly_parenthesis_count();
 		parenthesis_st.push(last_expression->first);
 		ast_vector.push_back(last_expression->first);
-		
+		potential_last_error = SYNTAX_SUCCESS;
+
 		is_function = false;
 		complete = true;
 		last_expression->second = false;
 		function_map[my_func.get_name().data()] = *ast_vector.rbegin();
+		clear_expression();
 
 	}
 	if(last_expression->first != nullptr)
@@ -227,6 +249,7 @@ ExpressionRet generate_ast::function_call::assign(AST::function_call &last_expr,
 	if(t.is_value()) {
 		if(!last_expr.defined_function_name()) {
 			last_expr.define_function_name(function::function_map.find(t.data())->second);
+			potential_last_error = ERROR_EXPECTED_PARENTHESIS;
 		} else {
 			/*
 			 * We're gonna assume its a parameter
@@ -240,10 +263,60 @@ ExpressionRet generate_ast::function_call::assign(AST::function_call &last_expr,
 	if(last_expr.get_parenthesis_count() == 2) {
 		is_function_call = false;
 		complete = true;
-		*last_expression->first = AST::AnyAST(last_expr);
-		function::check_is_function_body();
-		clear_expression();
+		last_expr.define_params();
+		potential_last_error = SYNTAX_SUCCESS;
+		if(!__is_child) {
+			*last_expression->first = AST::AnyAST(last_expr);
+			function::check_is_function_body();
+			clear_expression();
+		}
 	}
 	
+	return {SYNTAX_SUCCESS, -1};
+}
+			
+
+ExpressionRet generate_ast::return_gen::check(lexer::token &token, bool &is_return, int &line, std::shared_ptr<AST::AnyAST> &last_expr) {
+	if(token.is_keyword() && std::holds_alternative<AST::return_ast>(*last_expr)) {
+		return {ERROR_UNEXPECTED_KEYWORD, line};
+	}
+
+	if(!std::holds_alternative<AST::return_ast>(*last_expr))
+		*last_expr = AST::return_ast();
+	
+	auto ret_obj = std::get<AST::return_ast>(*last_expr);
+
+	if((token.is_semicolon() && !ret_obj.defined_value()) || (token.is_semicolon() && !ret_obj.defined_keyword()))
+		/*
+		 * We have a syntax error, unknown semicolon
+		 */
+		return {ERROR_UNEXPECTED_SEMICOLON, line};
+
+	if(token.is_value() && !ret_obj.defined_keyword())
+		return {ERROR_UNEXPECTED_KEYWORD, line};
+	
+	return assign(last_expr, is_return, token);
+
+}
+			
+ExpressionRet generate_ast::return_gen::assign(std::shared_ptr<AST::AnyAST> &ret_ptr, bool &is_return, lexer::token &t) {
+	auto ret_obj = std::get<AST::return_ast>(*ret_ptr);
+	if(t.is_keyword()) {
+		ret_obj.define_keyword();
+		potential_last_error = ERROR_EXPECTED_VALUE;
+	} else if(t.is_value()) {
+		/*
+		 * Right now only supporting integer variables as return type
+		 * will change in future
+		 */
+		ret_obj.define_value(t.data());
+	}
+	if(t.is_semicolon()) {
+		is_return = false;
+		function::check_is_function_body();
+		potential_last_error = SYNTAX_SUCCESS;
+	}
+
+	*ret_ptr = ret_obj;
 	return {SYNTAX_SUCCESS, -1};
 }
