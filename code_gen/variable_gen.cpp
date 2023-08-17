@@ -1,4 +1,5 @@
 #include "variable_gen.hpp"
+#include "code_gen.hpp"
 #include "function_call_gen.hpp"
 
 int variable_gen::generate(AST::variable var) {
@@ -40,8 +41,9 @@ int variable_gen::generate(AST::variable var) {
 	/*
 	 * generates asm using simple string  manipulation (totally not copied from gcc)
 	 */
-	var.memory_location = "rbp - " + std::to_string(rbp_count + stack_to_reserve);
-	asm_type += std::string("[") + var.memory_location + "], " + val + "\n";
+	auto loc = "rbp - " + std::to_string(rbp_count + stack_to_reserve);
+	code_generator::var_mem_locations[var.get_name().data()] = loc;
+	asm_type += std::string("[") + loc + "], " + val + "\n";
 	var.instruction += var.instruction_type + " " + std::move(asm_type);
 	if(!is_function_body)
 		append_asm(var.instruction);

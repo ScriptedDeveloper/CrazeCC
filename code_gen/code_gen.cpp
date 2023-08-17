@@ -5,6 +5,7 @@ std::string code_generator::asm_content{"BITS 64\n"};
 std::string code_generator::curr_instruction{};
 int code_generator::rbp_count{};
 bool code_generator::is_function_body{false};
+std::unordered_map<std::string, std::string> code_generator::var_mem_locations{};
 
 int code_generator::init(AST::AnyAST variable, const bool check_variable) {
 	is_function_body = check_variable;

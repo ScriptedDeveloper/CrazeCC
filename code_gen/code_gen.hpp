@@ -41,6 +41,8 @@ class code_generator {
 		inline void append_asm(std::string_view expr_asm) {
 			asm_content += expr_asm.data();
 		}
+
+		static std::unordered_map<std::string, std::string> var_mem_locations;
 };
 
 #include "function_gen.hpp"

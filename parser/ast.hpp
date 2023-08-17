@@ -140,7 +140,6 @@ namespace AST {
 				return value;
 			}
 		std::string instruction{};
-		std::string memory_location{};
 		static constexpr std::string instruction_type{"mov"};
 
 		static constexpr uint8_t TYPE_INT = 1;
