@@ -1,7 +1,6 @@
 #pragma once
 #include <iostream>
-#include "../parser/syntax_validator.hpp"
-#include "../code_gen/code_gen.hpp"
+
 
 class exception {
 	public: 
@@ -14,3 +13,6 @@ class exception {
 	private:
 		std::string GetLastError(int error);
 };
+
+#include "../parser/syntax_validator.hpp"
+#include "../code_gen/code_gen.hpp"

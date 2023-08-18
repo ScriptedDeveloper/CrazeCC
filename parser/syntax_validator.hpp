@@ -43,7 +43,7 @@ class syntax_validator {
 		static constexpr int ERROR_UNEXPECTED_SEMICOLON = -20;
 		static constexpr int ERROR_UNEXPECTED_KEYWORD = -21;	
 
-		int potential_last_error{SYNTAX_SUCCESS}; // in case we go to the next 
+		static int potential_last_error; // in case we go to the next 
 							  // expression, we can look back in case something's missing
 
 		

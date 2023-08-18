@@ -7,6 +7,7 @@
 std::vector<std::shared_ptr<AST::AnyAST>> syntax_validator::ast_vector{};
 std::shared_ptr<lexer::LexVector> syntax_validator::__lex_vec{};
 int syntax_validator::line{1};
+int syntax_validator::potential_last_error{SYNTAX_SUCCESS};
 bool syntax_validator::complete{false};
 std::unique_ptr<syntax_validator::expression_variant> 
 syntax_validator::last_expression = std::make_unique<expression_variant>();
@@ -18,6 +19,7 @@ std::pair<int ,std::variant<int, std::vector<std::shared_ptr<AST::AnyAST>>>> syn
 	 */
 
 	for(auto token : *__lex_vec) {	
+		line = token.get_line();
 		auto ret = check_keyword_tokens(token);
 		if(ret.first != SYNTAX_SUCCESS && ret.first != ERROR_INVALID_KEYWORD)
 			return ret;
@@ -37,9 +39,6 @@ std::pair<int ,std::variant<int, std::vector<std::shared_ptr<AST::AnyAST>>>> syn
 			if(if_ret.first != SYNTAX_SUCCESS)
 				return if_ret;
 				*/
-		} else if(token.is_semicolon()) {
-			line++;
-	
 		} else if(token.is_curly_brackets()) {
 			auto ret = check_curly_brackets(token, last_expression->first);
 			clear_expression(); // we no longer need the other expression
@@ -64,10 +63,14 @@ ExpressionRet syntax_validator::check_keyword_tokens(lexer::token &token) {
 	if(token.is_space())
 		return {SYNTAX_SUCCESS, -1};
 
+
 	auto it = std::find_if(lexer::keywords.begin(), lexer::keywords.end(), [&](const auto &pair) {
 		return pair.first == token.data();
 	});
 	int keyword = (it == lexer::keywords.end()) ? -1 : it->second;
+
+	if(potential_last_error != SYNTAX_SUCCESS && keyword != -1)
+		return {potential_last_error, line};
 
 	bool has_computed{true};
 	if(keyword == lexer::RETURN_KEYWORD || is_return) {

@@ -24,42 +24,44 @@ class lexer {
 		};
 		int parse() {
 			std::string curr_token{};
+			int curr_line{};
 			for(char c : __contents) {
 			switch(c) {
 				case ' ' : {
 					if(!curr_token.empty())
-						lexer_vec->push_back(token(std::move(curr_token)));
+						lexer_vec->push_back(token(std::move(curr_token), curr_line));
 					else
-						lexer_vec->push_back(token(std::string(1, c)));
+						lexer_vec->push_back(token(std::string(1, c), curr_line));
 					break;
 				};
 				case ';' : {
 					if(!lexer_vec->empty())
-						lexer_vec->push_back(token(std::move(curr_token)));
-					lexer_vec->push_back(token(std::string(1, c)));
+						lexer_vec->push_back(token(std::move(curr_token), curr_line));
+					lexer_vec->push_back(token(std::string(1, c), curr_line));
 					break;
 				};
 				case '\n' : {
+					curr_line++;
 					continue;
 				};
 				case '{' : {
-					push_remaining(curr_token);
-					lexer_vec->push_back(token(std::string(1, c)));
+					push_remaining(curr_token, curr_line);
+					lexer_vec->push_back(token(std::string(1, c), curr_line));
 					break;
 				};
 				case '}' : {
-					push_remaining(curr_token);
-					lexer_vec->push_back(token(std::string(1, c)));
+					push_remaining(curr_token, curr_line);
+					lexer_vec->push_back(token(std::string(1, c), curr_line));
 					break;
 				}
 				case '(' : {
-					push_remaining(curr_token);
-					lexer_vec->push_back(token(std::string(1, c)));
+					push_remaining(curr_token, curr_line);
+					lexer_vec->push_back(token(std::string(1, c), curr_line));
 					break;
 				};	
 				case ')' : {
-					push_remaining(curr_token);
-					lexer_vec->push_back(token(std::string(1, c)));
+					push_remaining(curr_token, curr_line);
+					lexer_vec->push_back(token(std::string(1, c), curr_line));
 					break;
 				};
 				case '\t' : {
@@ -72,12 +74,13 @@ class lexer {
 			};
 			}
 			if(lexer_vec->empty() || lexer_vec->rbegin()->data() != curr_token)
-				lexer_vec->push_back(curr_token);
+				lexer_vec->push_back(token(curr_token, curr_line));
 			return LEXER_SUCCESS;
 		}
 		class token {
 			public:
-				token(std::string curr_token) {
+				token(std::string curr_token, int curr_line_param) {
+					curr_line = curr_line_param;
 					__data = std::move(curr_token);
 					if(__check_if_space())
 						__is_space = true;
@@ -132,6 +135,9 @@ class lexer {
 			inline bool is_hashtag() {
 				return __is_hashtag;
 			}
+			inline int get_line() {
+				return curr_line;
+			}
 			private:
 				std::string __data{};
 				bool __is_space{false};
@@ -142,6 +148,7 @@ class lexer {
 				bool __is_operator{false};
 				bool __is_value{false};
 				bool __is_parenthesis{false};
+				int curr_line{};
 				bool __check_if_space() {
 					for(char c : __data) {
 						if(c != ' ') {
@@ -183,9 +190,9 @@ class lexer {
 		std::string __path{};
 		std::string __contents{};
 
-		inline void push_remaining(std::string &curr_token) {
+		inline void push_remaining(std::string &curr_token, int curr_line) {
 			if(!curr_token.empty())
-				lexer_vec->push_back(token(std::move(curr_token)));
+				lexer_vec->push_back(token(std::move(curr_token), curr_line));
 		}
 		
 };

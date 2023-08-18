@@ -261,17 +261,22 @@ ExpressionRet generate_ast::function_call::assign(AST::function_call &last_expr,
 	}
 
 	if(last_expr.get_parenthesis_count() == 2) {
-		is_function_call = false;
-		complete = true;
 		last_expr.define_params();
-		potential_last_error = SYNTAX_SUCCESS;
-		if(!__is_child) {
-			*last_expression->first = AST::AnyAST(last_expr);
-			function::check_is_function_body();
-			clear_expression();
-		}
-	}
+		potential_last_error = ERROR_EXPECTED_SEMICOLON;
 	
+	}
+	if(t.is_semicolon()) {
+		is_function_call = false;
+		complete = true;	
+		function::check_is_function_body();
+		clear_expression();
+		last_expr.define_semicolon();
+		potential_last_error = SYNTAX_SUCCESS;	
+	}
+	if(!__is_child) {
+		*last_expression->first = AST::AnyAST(last_expr);
+	}
+
 	return {SYNTAX_SUCCESS, -1};
 }
 			
