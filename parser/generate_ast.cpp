@@ -1,17 +1,12 @@
 #include "generate_ast.hpp"
 #include "ast.hpp"
 
-//std::unordered_map<std::string_view, std::vector<std::vector<AST::AnyAST>::iterator>> function::param_map{};
-
-			
 std::unordered_map<std::string, std::shared_ptr<AST::AnyAST>> generate_ast::variable::var_map{};
 
 std::unordered_map<std::string, std::shared_ptr<AST::AnyAST>> generate_ast::function::function_map{};
 
-ExpressionRet generate_ast::variable::check(lexer::token &token, 
-	 bool &is_variable, int &potential_last_error, bool &complete) {
+ExpressionRet generate_ast::variable::check(lexer::token &token) {
 
-	is_variable = true;
 	complete = false;
 	if(token.is_space())
 		return {SYNTAX_SUCCESS, -1}; // ignoring spaces
@@ -34,11 +29,10 @@ ExpressionRet generate_ast::variable::check(lexer::token &token,
 	 */
 				
 	last_expression->second = true; // it exists!
-	return (assign(token, last_expression, is_variable, line, potential_last_error, complete));
+	return (assign(token, last_expression));
 }
 
-ExpressionRet generate_ast::variable::assign(lexer::token &token, auto &last_expression, bool &is_variable, 
-	int line, int &potential_last_error, bool &complete) {
+ExpressionRet generate_ast::variable::assign(lexer::token &token, auto &last_expression) {
 
 	AST::variable var_obj = std::get<AST::variable>(*last_expression->first);
 
@@ -52,7 +46,7 @@ ExpressionRet generate_ast::variable::assign(lexer::token &token, auto &last_exp
 	}
 	else if(token.is_semicolon()) {
 		var_obj.define_equal_symbol();
-		is_variable = false;
+		*__is_variable = false;
 		complete = true;	
 		function::check_is_function_body();
 		var_map[var_obj.get_name().data()] = last_expression->first;
@@ -70,8 +64,8 @@ ExpressionRet generate_ast::variable::assign(lexer::token &token, auto &last_exp
 					var_obj.define_value(AST::function_call());
 				auto obj = std::get<AST::function_call>(var_obj.get_value());
 				auto ptr = std::make_shared<AST::AnyAST>(AST::AnyAST(obj));
-				generate_ast::function_call f_(lex_vec, is_function_call, true);
-				f_.check(token, is_function_call, line, ptr);
+				generate_ast::function_call f_(lex_vec, &is_function_call, true);
+				f_.check(token, ptr);
 				complete = false;
 				var_obj.define_value(std::get<AST::function_call>(*ptr));
 			}
@@ -96,8 +90,7 @@ void assign_variable_param() {
 }
 
 
-ExpressionRet generate_ast::function::check(lexer::token &token, 
-bool &is_function, bool &complete) {	
+ExpressionRet generate_ast::function::check(lexer::token &token) {	
 	if(token.is_space())
 		return {SYNTAX_SUCCESS, -1}; // ignoring spaces
 	/*
@@ -123,7 +116,7 @@ bool &is_function, bool &complete) {
 
 	last_expression->second = true;
 
-	return assign(token, is_function, complete);
+	return assign(token);
 }
 			
 
@@ -143,8 +136,7 @@ void generate_ast::function::check_is_function_body() {
 }
 
 
-ExpressionRet generate_ast::function::assign(lexer::token &token, 
-bool &is_function, bool &complete) {	
+ExpressionRet generate_ast::function::assign(lexer::token &token) {	
 	auto my_func = std::get<AST::function>(*last_expression->first);
 
 	if(token.is_keyword())
@@ -191,7 +183,7 @@ bool &is_function, bool &complete) {
 		ast_vector.push_back(last_expression->first);
 		potential_last_error = SYNTAX_SUCCESS;
 
-		is_function = false;
+		*is_function_ptr = false;
 		complete = true;
 		last_expression->second = false;
 		function_map[my_func.get_name().data()] = *ast_vector.rbegin();
@@ -205,7 +197,7 @@ bool &is_function, bool &complete) {
 }
 
 
-ExpressionRet generate_ast::function_call::check(lexer::token &token, bool &is_function_call, int &line, std::shared_ptr<AST::AnyAST> &last_expr) {
+ExpressionRet generate_ast::function_call::check(lexer::token &token, std::shared_ptr<AST::AnyAST> &last_expr) {
 	if(is_invisible_char(token.data()))
 		return {SYNTAX_SUCCESS, -1}; // ignore invisible chars
 
@@ -238,14 +230,14 @@ ExpressionRet generate_ast::function_call::check(lexer::token &token, bool &is_f
 	
 	last_expression->second = true; // it exists!
 
-	auto ret = assign(func_call, is_function_call, token);
+	auto ret = assign(func_call, token);
 	if(last_expression->first)
 		*last_expr = func_call;
 	return ret;
 }
 			
 
-ExpressionRet generate_ast::function_call::assign(AST::function_call &last_expr, bool &is_function_call, lexer::token &t) {
+ExpressionRet generate_ast::function_call::assign(AST::function_call &last_expr, lexer::token &t) {
 	if(t.is_value()) {
 		if(!last_expr.defined_function_name()) {
 			last_expr.define_function_name(function::function_map.find(t.data())->second);
@@ -266,7 +258,7 @@ ExpressionRet generate_ast::function_call::assign(AST::function_call &last_expr,
 	
 	}
 	if(t.is_semicolon()) {
-		is_function_call = false;
+		*__is_function_call = false;
 		complete = true;	
 		function::check_is_function_body();
 		clear_expression();
@@ -281,7 +273,7 @@ ExpressionRet generate_ast::function_call::assign(AST::function_call &last_expr,
 }
 			
 
-ExpressionRet generate_ast::return_gen::check(lexer::token &token, bool &is_return, int &line, std::shared_ptr<AST::AnyAST> &last_expr) {
+ExpressionRet generate_ast::return_gen::check(lexer::token &token, std::shared_ptr<AST::AnyAST> &last_expr) {
 	if(token.is_keyword() && std::holds_alternative<AST::return_ast>(*last_expr)) {
 		return {ERROR_UNEXPECTED_KEYWORD, line};
 	}
@@ -300,11 +292,11 @@ ExpressionRet generate_ast::return_gen::check(lexer::token &token, bool &is_retu
 	if(token.is_value() && !ret_obj.defined_keyword())
 		return {ERROR_UNEXPECTED_KEYWORD, line};
 	
-	return assign(last_expr, is_return, token);
+	return assign(last_expr, token);
 
 }
 			
-ExpressionRet generate_ast::return_gen::assign(std::shared_ptr<AST::AnyAST> &ret_ptr, bool &is_return, lexer::token &t) {
+ExpressionRet generate_ast::return_gen::assign(std::shared_ptr<AST::AnyAST> &ret_ptr, lexer::token &t) {
 	auto ret_obj = std::get<AST::return_ast>(*ret_ptr);
 	if(t.is_keyword()) {
 		ret_obj.define_keyword();
@@ -317,7 +309,7 @@ ExpressionRet generate_ast::return_gen::assign(std::shared_ptr<AST::AnyAST> &ret
 		ret_obj.define_value(t.data());
 	}
 	if(t.is_semicolon()) {
-		is_return = false;
+		*__is_return = false;
 		function::check_is_function_body();
 		potential_last_error = SYNTAX_SUCCESS;
 	}

@@ -28,8 +28,8 @@ std::pair<int ,std::variant<int, std::vector<std::shared_ptr<AST::AnyAST>>>> syn
 		else if(complete && potential_last_error != SYNTAX_SUCCESS)
 			return {potential_last_error, line}; // something went wrong in the past line
 		if(is_variable || (token.is_data_type() && !last_expression->second)) {
-			generate_ast::variable v(__lex_vec, is_variable);
-			auto variable_ret = v.check(token, is_variable, potential_last_error, complete);
+			generate_ast::variable v(__lex_vec, &is_variable);
+			auto variable_ret = v.check(token);
 			if(variable_ret.first != SYNTAX_SUCCESS)
 				return variable_ret;
 
@@ -46,8 +46,8 @@ std::pair<int ,std::variant<int, std::vector<std::shared_ptr<AST::AnyAST>>>> syn
 				return ret;
 		}
 		else if(token.is_value() || is_function_call) {
-			generate_ast::function_call f_call(__lex_vec, is_function_call);
-			auto call_ret = f_call.check(token, is_function_call, line, last_expression->first);
+			generate_ast::function_call f_call(__lex_vec, &is_function_call);
+			auto call_ret = f_call.check(token, last_expression->first);
 			if(call_ret.first != SYNTAX_SUCCESS)
 				return call_ret;
 		}
@@ -74,14 +74,14 @@ ExpressionRet syntax_validator::check_keyword_tokens(lexer::token &token) {
 
 	bool has_computed{true};
 	if(keyword == lexer::RETURN_KEYWORD || is_return) {
-		generate_ast::return_gen ret_obj(__lex_vec, is_return);
-		auto ret = ret_obj.check(token, is_return, line, last_expression->first);
+		generate_ast::return_gen ret_obj(__lex_vec, &is_return);
+		auto ret = ret_obj.check(token, last_expression->first);
 		if(ret.first != SYNTAX_SUCCESS)
 			return ret;
 
 	} else if(is_function || keyword == lexer::DEF_KEYWORD) {
-		generate_ast::function f(__lex_vec, is_function);
-		auto func_ret = f.check(token, is_function, complete); // need check last error
+		generate_ast::function f(__lex_vec, &is_function);
+		auto func_ret = f.check(token); // need check last error
 		if(func_ret.first != SYNTAX_SUCCESS)
 			return func_ret;
 	} else
