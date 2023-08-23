@@ -86,6 +86,7 @@ namespace generate_ast {
 
 		private:
 			bool *__is_if_statement{};
+			ExpressionRet assign(lexer::token &token);
 	};
 
 

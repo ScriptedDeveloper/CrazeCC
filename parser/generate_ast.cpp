@@ -121,16 +121,23 @@ ExpressionRet generate_ast::function::check(lexer::token &token) {
 			
 
 void generate_ast::function::check_is_function_body() {
-	if(parenthesis_st.empty() || (!parenthesis_st.empty() 
-		&& !std::holds_alternative<AST::function>(*parenthesis_st.top())))
+	if(parenthesis_st.empty() || ((!parenthesis_st.empty() 
+		&& !std::holds_alternative<AST::function>(*parenthesis_st.top())) &&
+		!std::holds_alternative<AST::if_statement>(*parenthesis_st.top())))
 		/*
 		 * If we are inside a function, add it to the function body, otherwise, it's just a global variable
 		 */
 		ast_vector.push_back(last_expression->first);
 	else {
-		auto top = std::get<AST::function>(*parenthesis_st.top());
-		top.function_body.push_back(*last_expression->first);
-		*parenthesis_st.top() = top;
+		if(std::holds_alternative<AST::function>(*parenthesis_st.top())) {
+			auto top = std::get<AST::function>(*parenthesis_st.top());
+			top.function_body.push_back(*last_expression->first);
+			*parenthesis_st.top() = top;
+		} else {
+			auto top = std::get<AST::if_statement>(*parenthesis_st.top());
+			top.function_body.push_back(*last_expression->first);
+			*parenthesis_st.top() = top;
+		}
 	}
 
 }
@@ -316,4 +323,57 @@ ExpressionRet generate_ast::return_gen::assign(std::shared_ptr<AST::AnyAST> &ret
 
 	*ret_ptr = ret_obj;
 	return {SYNTAX_SUCCESS, -1};
+}
+
+
+ExpressionRet generate_ast::if_statement::check(lexer::token &t) {
+	if(!std::holds_alternative<AST::if_statement>(*last_expression->first))
+		*last_expression->first = AST::if_statement();
+
+	if(t.is_semicolon())
+		return {ERROR_UNEXPECTED_SEMICOLON, line};
+	
+	if(t.is_data_type())
+		return {ERROR_UNEXPECTED_DATA_TYPE, line};
+
+	AST::if_statement obj = std::get<AST::if_statement>(*last_expression->first);
+
+	if(obj.defined_keyword() && t.is_keyword())
+		return {ERROR_UNEXPECTED_KEYWORD, line};
+	
+	if(obj.defined_code_block() && !t.is_curly_brackets())
+		return {ERROR_EXPECTED_PARENTHESIS, line};
+
+	if(obj.defined_expression() && !t.is_curly_brackets())
+		return {ERROR_EXPECTED_PARENTHESIS, line};
+
+	return assign(t);
+}
+
+ExpressionRet generate_ast::if_statement::assign(lexer::token &token) {
+	AST::if_statement obj = std::get<AST::if_statement>(*last_expression->first);
+
+	if(token.is_keyword())
+		obj.define_keyword();
+	else if(token.is_brackets()) {
+		obj.increment_parenthesis_count();
+	} else if(token.is_curly_brackets()) {
+		obj.increment_curly_parenthesis_count();
+		if(obj.get_curly_parenthesis_count() == 1) {
+			*__is_if_statement = false;
+			function::check_is_function_body();
+		} else 
+			parenthesis_st.push(last_expression->first);
+	} else if(token.is_operator()) {
+		if(token.data() == "==") {
+			obj.__is_compare = true;
+		}
+	} else {
+		if(obj.compare_pair.first.empty())
+			obj.compare_pair.first = token.data();
+		else
+			obj.compare_pair.second = token.data();
+	}
+	*last_expression->first = obj;
+	return {SYNTAX_SUCCESS, line};
 }

@@ -1,5 +1,6 @@
 #include "syntax_validator.hpp"
 #include "ast.hpp"
+#include "generate_ast.hpp"
 /*
  * Static variable declarations
  */
@@ -35,9 +36,7 @@ std::pair<int ,std::variant<int, std::vector<std::shared_ptr<AST::AnyAST>>>> syn
 
 		} else if(is_if || (token.is_keyword() && token.data() == lexer::keywords.begin()->first)) {
 			/*
-			auto if_ret = check_if_statement(token, is_if, potential_last_error, complete);
-			if(if_ret.first != SYNTAX_SUCCESS)
-				return if_ret;
+
 				*/
 		} else if(token.is_curly_brackets()) {
 			auto ret = check_curly_brackets(token, last_expression->first);
@@ -84,6 +83,11 @@ ExpressionRet syntax_validator::check_keyword_tokens(lexer::token &token) {
 		auto func_ret = f.check(token); // need check last error
 		if(func_ret.first != SYNTAX_SUCCESS)
 			return func_ret;
+	} else if(is_if || keyword == lexer::IF_KEYWORD) {
+		generate_ast::if_statement if_obj(__lex_vec, &is_if);
+		auto if_ret = if_obj.check(token);
+			if(if_ret.first != SYNTAX_SUCCESS)
+				return if_ret;
 	} else
 		has_computed = false;
 	

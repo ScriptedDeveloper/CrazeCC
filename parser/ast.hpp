@@ -171,6 +171,28 @@ namespace AST {
 			inline void define_code_block() {
 				__defined_code_block = true;
 			}
+			inline void define_keyword() {
+				__defined_keyword = true;
+			}
+			inline void increment_parenthesis_count() {
+				__parenthesis_count++;
+			}
+			inline uint8_t get_parenthesis_count() {
+				return __parenthesis_count;
+			}	
+			inline void increment__parenthesis_count() {
+				__parenthesis_count++;
+			}
+			inline uint8_t get_curly_parenthesis_count() {
+				return __curly_parenthesis_count;
+			}	
+			inline uint8_t increment_curly_parenthesis_count() {
+				return __curly_parenthesis_count++;
+			}
+			std::pair<std::string, std::string> compare_pair{}; // will change this later.. will try to get some basic logic working first
+
+			bool __is_compare{false};
+			std::vector<AST::AnyAST> function_body{}; 
 		private:
 			/*
 			 * This is not DONE 
@@ -179,6 +201,8 @@ namespace AST {
 			bool __defined_keyword{false};
 			bool __defined_expression{false};
 			bool __defined_code_block{false};
+			uint8_t __parenthesis_count{};
+			uint8_t __curly_parenthesis_count{};
 	};
 	class function {
 		public:
