@@ -86,8 +86,8 @@ class lexer {
 						__is_space = true;
 					else if(__data == ";")
 						__is_semicolon = true;
-					else if(__data.size() == 1 && std::find(operators.begin(), 
-						operators.end(), *__data.begin()) != operators.end())
+					else if(std::find(operators.begin(), 
+						operators.end(), __data) != operators.end())
 						__is_operator = true;
 					else if(std::find_if(keywords.begin(), keywords.end(), [&](const auto &pair) {
 						return pair.first == __data;
@@ -173,8 +173,8 @@ class lexer {
 		static constexpr std::array<std::string, 4> data_types = {
 			"int", "bool", "char", "void"
 		};	
-		static constexpr std::array<char, 6> operators = {
-			'+', '-', '/', '*', '%', '='
+		static constexpr std::array<std::string_view, 7> operators = {
+			"+", "-", "/", "*", "%", "=", "=="
 		};
 
 		static constexpr std::array<std::pair<std::string, int>, data_types.size()> data_sizes = {

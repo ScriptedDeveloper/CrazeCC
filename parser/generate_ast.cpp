@@ -120,7 +120,7 @@ ExpressionRet generate_ast::function::check(lexer::token &token) {
 }
 			
 
-void generate_ast::function::check_is_function_body() {
+void generate_ast::function::check_is_function_body(bool is_block_expression) {
 	if(parenthesis_st.empty() || ((!parenthesis_st.empty() 
 		&& !std::holds_alternative<AST::function>(*parenthesis_st.top())) &&
 		!std::holds_alternative<AST::if_statement>(*parenthesis_st.top())))
@@ -132,7 +132,11 @@ void generate_ast::function::check_is_function_body() {
 		if(std::holds_alternative<AST::function>(*parenthesis_st.top())) {
 			auto top = std::get<AST::function>(*parenthesis_st.top());
 			top.function_body.push_back(*last_expression->first);
-			*parenthesis_st.top() = top;
+
+			if(is_block_expression)
+				parenthesis_st.push(last_expression->first);
+			else
+				*parenthesis_st.top() = top;
 		} else {
 			auto top = std::get<AST::if_statement>(*parenthesis_st.top());
 			top.function_body.push_back(*last_expression->first);
@@ -361,9 +365,12 @@ ExpressionRet generate_ast::if_statement::assign(lexer::token &token) {
 		obj.increment_curly_parenthesis_count();
 		if(obj.get_curly_parenthesis_count() == 1) {
 			*__is_if_statement = false;
-			function::check_is_function_body();
+			function::check_is_function_body(true);
+			clear_expression();
 		} else 
 			parenthesis_st.push(last_expression->first);
+
+		return {SYNTAX_SUCCESS, -1};
 	} else if(token.is_operator()) {
 		if(token.data() == "==") {
 			obj.__is_compare = true;

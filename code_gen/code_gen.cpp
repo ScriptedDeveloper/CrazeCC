@@ -7,7 +7,7 @@ int code_generator::rbp_count{};
 bool code_generator::is_function_body{false};
 std::unordered_map<std::string, std::string> code_generator::var_mem_locations{};
 
-int code_generator::init(AST::AnyAST variable, const bool check_variable) {
+int code_generator::init(AST::AnyAST variable, const bool check_variable, AST::function parent) {
 	is_function_body = check_variable;
 	for(auto curr_tree_it : ast_vec) {
 		auto curr_tree = *curr_tree_it;
@@ -19,10 +19,8 @@ int code_generator::init(AST::AnyAST variable, const bool check_variable) {
 			variable_gen v(ast_vec, file_name);
 			ret = v.generate(std::get<AST::variable>(curr_tree));
 		} else if(std::holds_alternative<AST::if_statement>(curr_tree)) {
-			/*
-			auto statement = std::get<AST::if_statement>(curr_tree);
-			generate_if_statement(statement);
-			*/
+			if_gen if_obj(ast_vec, file_name);
+			ret = if_obj.generate(std::get<AST::if_statement>(curr_tree));
 		} else if(std::holds_alternative<AST::function>(curr_tree)) {
 			function_gen f(ast_vec, file_name);
 			ret = f.generate(std::get<AST::function>(curr_tree));
@@ -31,7 +29,7 @@ int code_generator::init(AST::AnyAST variable, const bool check_variable) {
 			ret = f.generate(std::get<AST::function_call>(curr_tree));
 		} else if(std::holds_alternative<AST::return_ast>(curr_tree)) {
 			return_gen r(ast_vec, file_name);
-			ret = r.generate(std::get<AST::return_ast>(curr_tree));
+			ret = r.generate(std::get<AST::return_ast>(curr_tree), parent);
 		}
 
 		if(ret != GENERATE_SUCCESS || check_variable)

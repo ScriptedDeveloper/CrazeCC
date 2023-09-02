@@ -1,5 +1,6 @@
 #pragma once
 #include "code_gen.hpp"
+#include "helper.hpp"
 
 class function_gen : public code_generator {
 	public:
@@ -13,7 +14,6 @@ class function_gen : public code_generator {
 
 	private:
 		std::string asm_instruction{};
-		inline void restore_stack_ptr(const auto &bytes);
 		inline void set_global_function(AST::function &func);
 };
 

@@ -79,6 +79,9 @@ class syntax_validator {
 		std::pair<int, int> check_curly_brackets(lexer::token &t, std::shared_ptr<AST::AnyAST> &expression);
 		ExpressionRet check_keyword_tokens(lexer::token &token);
 
+		template <typename T>
+		void push_objects(auto top, auto if_expr);
+
 		/*
 		 * for check_syntax_tokens()
 		 */

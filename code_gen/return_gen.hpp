@@ -8,7 +8,7 @@ class return_gen : public code_generator {
 		return_gen(GEN_CONSTRUCTOR_PARAMS) : code_generator(ast_vec_p, file_name_p) {};
 		virtual ~return_gen() {};
 
-		int generate(AST::return_ast &ret_obj);
+		int generate(AST::return_ast &ret_obj, AST::function parent);
 	private:
 		std::string asm_instruction{};
 };

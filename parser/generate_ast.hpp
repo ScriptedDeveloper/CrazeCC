@@ -65,7 +65,7 @@ namespace generate_ast {
 			 * Stores the function pointers by name.
 			 */
 			static std::unordered_map<std::string, std::shared_ptr<AST::AnyAST>> function_map;
-			static void check_is_function_body();
+			static void check_is_function_body(bool is_block_expression = false);
 
 		private:
 			std::vector<AST::AnyAST> function_body{};	

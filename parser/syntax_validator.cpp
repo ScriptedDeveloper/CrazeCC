@@ -1,6 +1,18 @@
 #include "syntax_validator.hpp"
 #include "ast.hpp"
 #include "generate_ast.hpp"
+#include <variant>
+
+template <typename T>
+void syntax_validator::push_objects(auto top, auto if_expr) {
+	/*
+	 * This simplfiies pushing if statements to their parent (e.g if block, function)
+	 */
+	auto obj = std::get<T>(top);
+	obj.function_body.push_back(AST::AnyAST(if_expr));
+	*parenthesis_st.top() = obj;
+}
+
 /*
  * Static variable declarations
  */
@@ -34,10 +46,6 @@ std::pair<int ,std::variant<int, std::vector<std::shared_ptr<AST::AnyAST>>>> syn
 			if(variable_ret.first != SYNTAX_SUCCESS)
 				return variable_ret;
 
-		} else if(is_if || (token.is_keyword() && token.data() == lexer::keywords.begin()->first)) {
-			/*
-
-				*/
 		} else if(token.is_curly_brackets()) {
 			auto ret = check_curly_brackets(token, last_expression->first);
 			clear_expression(); // we no longer need the other expression
@@ -127,6 +135,21 @@ std::pair<int, int> syntax_validator::check_curly_brackets(lexer::token &t, std:
 				 */
 				return {ERROR_UNEXPECTED_PARENTHESIS, line};
 			if_expr.define_code_block();
+			if(parenthesis_st.empty())
+				return {ERROR_EXPECTED_FUNCTION_DECLARATION, line};
+			/*
+			 * Now we need to push the if statement to its upper object
+			 */
+			auto top = parenthesis_st.top();
+			if(std::holds_alternative<AST::if_statement>(*top)) {
+				push_objects<AST::if_statement>(*top, if_expr);
+
+			} else if(std::holds_alternative<AST::function>(*top)) {
+				push_objects<AST::function>(*top, if_expr);
+			} else {
+				return {ERROR_EXPECTED_FUNCTION_DECLARATION, line}; // we dont have a function
+			}
+	
 		} else {
 			auto func_expr = std::get<function>(*curr_expr);
 			if(func_expr.defined_code_block()) {

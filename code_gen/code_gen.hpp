@@ -19,7 +19,7 @@ class code_generator {
 		}
 		virtual ~code_generator() {};
 
-		int init(AST::AnyAST variable = AST::AnyAST(), const bool check_variable = false);
+		int init(AST::AnyAST variable = AST::AnyAST(), const bool check_variable = false, AST::function parent = AST::function());
 
 		static constexpr int GENERATE_SUCCESS = -30;
 		static constexpr int GENERATE_UNKNOWN_VARIABLE = -20;
@@ -49,3 +49,4 @@ class code_generator {
 #include "return_gen.hpp"
 #include "variable_gen.hpp"
 #include "function_call_gen.hpp"
+#include "if_gen.hpp"
