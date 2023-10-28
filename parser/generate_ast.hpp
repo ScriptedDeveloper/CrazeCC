@@ -14,6 +14,7 @@ namespace generate_ast {
 				__is_function_call =is_function_call;
 				*__is_function_call = true;
 				__is_child = is_child;
+				complete = false;
 
 			};
 			virtual ~function_call() {};

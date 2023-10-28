@@ -272,7 +272,7 @@ ExpressionRet generate_ast::function_call::assign(AST::function_call &last_expr,
 		*__is_function_call = false;
 		complete = true;	
 		function::check_is_function_body();
-		clear_expression();
+		//clear_expression();
 		last_expr.define_semicolon();
 		potential_last_error = SYNTAX_SUCCESS;	
 	}
