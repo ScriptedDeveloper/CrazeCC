@@ -49,8 +49,6 @@ Clone the repository:
     ```
     ./a.out
     ```
-    ./a.out
-    ```
 
 
 
