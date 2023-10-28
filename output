@@ -1,0 +1,22 @@
+BITS 64
+global func
+func:
+push rbp
+mov rbp, rsp
+mov eax, 0
+pop rbp
+add rsp, 0
+ret
+
+global main
+main:
+push rbp
+mov rbp, rsp
+sub rsp, 8
+call func
+mov dword[rbp - 4], eax
+mov eax,  [rbp - 4]
+pop rbp
+add rsp, 8
+ret
+
